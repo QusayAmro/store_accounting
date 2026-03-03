@@ -1,0 +1,52 @@
+name: store_accounting
+description: A store accounting application
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # Supabase for backend
+  supabase_flutter: ^2.0.0
+  
+  # For date formatting
+  intl: ^0.18.1
+  
+  # For charts in reports
+  syncfusion_flutter_charts: ^23.2.7
+  
+  # For PDF generation (optional)
+  pdf: ^3.10.7
+  printing: ^5.11.1
+  
+  # For local storage
+  shared_preferences: ^2.2.2
+  
+  # For checking internet connection
+  connectivity_plus: ^5.0.2
+  
+  # For device info
+  device_info_plus: ^9.1.2
+  
+  # For path manipulation
+  path: ^1.9.0
+  path_provider: ^2.1.1
+  
+  # For UUID generation
+  uuid: ^4.3.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+
+flutter:
+  uses-material-design: true
+  
+  # If you have assets like images, add them here
+  # assets:
+  #   - assets/images/
