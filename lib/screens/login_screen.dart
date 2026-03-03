@@ -57,6 +57,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final isSmallScreen = mediaQuery.size.width < 360;
+    final isVerySmallScreen = mediaQuery.size.width < 320;
+    final keyboardOpen = mediaQuery.viewInsets.bottom > 0;
+    final padding = mediaQuery.padding;
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -72,60 +78,72 @@ class _LoginScreenState extends State<LoginScreen> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
+              padding: EdgeInsets.all(isSmallScreen ? 16.0 : 24.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Logo with animated container
-                  TweenAnimationBuilder(
-                    duration: const Duration(milliseconds: 800),
-                    tween: Tween<double>(begin: 0, end: 1),
-                    curve: Curves.easeOutBack,
-                    builder: (context, double value, child) {
-                      return Transform.scale(
-                        scale: value,
-                        child: Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            shape: BoxShape.circle,
+                  // Logo with animated container - hide when keyboard is open on very small screens
+                  if (!(isVerySmallScreen && keyboardOpen))
+                    TweenAnimationBuilder(
+                      duration: const Duration(milliseconds: 800),
+                      tween: Tween<double>(begin: 0, end: 1),
+                      curve: Curves.easeOutBack,
+                      builder: (context, double value, child) {
+                        return Transform.scale(
+                          scale: value,
+                          child: Container(
+                            width: isSmallScreen ? 80 : 100,
+                            height: isSmallScreen ? 80 : 100,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.storefront,
+                              size: isSmallScreen ? 40 : 50,
+                              color: Colors.white,
+                            ),
                           ),
-                          child: const Icon(
-                            Icons.storefront,
-                            size: 60,
-                            color: Colors.white,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 40),
+                        );
+                      },
+                    ),
+                  
+                  // Add spacing only if logo is shown
+                  if (!(isVerySmallScreen && keyboardOpen))
+                    SizedBox(height: isSmallScreen ? 20 : 30),
                   
                   // Welcome text
-                  const Text(
+                  Text(
                     'Welcome Back!',
                     style: TextStyle(
-                      fontSize: 32,
+                      fontSize: isSmallScreen ? 24 : 28,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
+                    textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   Text(
                     'Sign in to manage your store',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: isSmallScreen ? 12 : 14,
                       color: Colors.white.withOpacity(0.9),
                     ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 40),
+                  SizedBox(height: isSmallScreen ? 20 : 30),
 
                   // Form card
                   Container(
+                    width: double.infinity,
+                    constraints: BoxConstraints(
+                      maxWidth: 400, // Prevents card from getting too wide on tablets
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.1),
@@ -134,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ],
                     ),
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
                     child: Form(
                       key: _formKey,
                       child: Column(
@@ -143,60 +161,105 @@ class _LoginScreenState extends State<LoginScreen> {
                           TextFormField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
                             decoration: InputDecoration(
                               labelText: 'Email',
-                              prefixIcon: const Icon(Icons.email_outlined),
+                              labelStyle: TextStyle(
+                                fontSize: isSmallScreen ? 12 : 14,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.email_outlined,
+                                size: isSmallScreen ? 18 : 20,
+                              ),
                               hintText: 'Enter your email',
+                              hintStyle: TextStyle(
+                                fontSize: isSmallScreen ? 12 : 14,
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: isSmallScreen ? 12 : 16,
+                                vertical: isSmallScreen ? 12 : 16,
+                              ),
+                              isDense: true,
+                            ),
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 14 : 16,
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Please enter your email';
+                                return 'Email required';
                               }
                               if (!value.contains('@')) {
-                                return 'Please enter a valid email';
+                                return 'Invalid email';
                               }
                               return null;
                             },
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: isSmallScreen ? 8 : 12),
 
                           // Password field
                           TextFormField(
                             controller: _passwordController,
                             obscureText: _obscurePassword,
+                            textInputAction: TextInputAction.done,
+                            onFieldSubmitted: (_) => _signIn(),
                             decoration: InputDecoration(
                               labelText: 'Password',
-                              prefixIcon: const Icon(Icons.lock_outline),
+                              labelStyle: TextStyle(
+                                fontSize: isSmallScreen ? 12 : 14,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.lock_outline,
+                                size: isSmallScreen ? 18 : 20,
+                              ),
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                  size: isSmallScreen ? 18 : 20,
                                 ),
                                 onPressed: () {
                                   setState(() {
                                     _obscurePassword = !_obscurePassword;
                                   });
                                 },
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
                               ),
                               hintText: 'Enter your password',
+                              hintStyle: TextStyle(
+                                fontSize: isSmallScreen ? 12 : 14,
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: isSmallScreen ? 12 : 16,
+                                vertical: isSmallScreen ? 12 : 16,
+                              ),
+                              isDense: true,
+                            ),
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 14 : 16,
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Please enter your password';
+                                return 'Password required';
                               }
                               if (value.length < 6) {
-                                return 'Password must be at least 6 characters';
+                                return 'Min 6 characters';
                               }
                               return null;
                             },
                           ),
-                          const SizedBox(height: 24),
+                          SizedBox(height: isSmallScreen ? 16 : 20),
 
                           // Sign in button
                           SizedBox(
                             width: double.infinity,
-                            height: 50,
+                            height: isSmallScreen ? 44 : 48,
                             child: ElevatedButton(
                               onPressed: _isLoading ? null : _signIn,
+                              style: ElevatedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 10),
+                                ),
+                              ),
                               child: _isLoading
                                   ? const SizedBox(
                                       width: 20,
@@ -206,10 +269,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                         strokeWidth: 2,
                                       ),
                                     )
-                                  : const Text(
+                                  : Text(
                                       'Sign In',
                                       style: TextStyle(
-                                        fontSize: 16,
+                                        fontSize: isSmallScreen ? 14 : 16,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -219,16 +282,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: isSmallScreen ? 12 : 16),
 
                   // Register link
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Wrap(
+                    alignment: WrapAlignment.center,
                     children: [
                       Text(
                         "Don't have an account? ",
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.9),
+                          fontSize: isSmallScreen ? 12 : 14,
                         ),
                       ),
                       TextButton(
@@ -237,16 +301,24 @@ class _LoginScreenState extends State<LoginScreen> {
                         },
                         style: TextButton.styleFrom(
                           foregroundColor: Colors.white,
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size(50, isSmallScreen ? 30 : 36),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                        child: const Text(
+                        child: Text(
                           'Sign Up',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
+                            fontSize: isSmallScreen ? 12 : 14,
                           ),
                         ),
                       ),
                     ],
                   ),
+                  
+                  // Add bottom padding for very small screens
+                  if (isVerySmallScreen)
+                    SizedBox(height: padding.bottom + 10),
                 ],
               ),
             ),

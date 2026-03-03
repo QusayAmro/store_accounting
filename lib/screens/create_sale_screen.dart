@@ -284,22 +284,24 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
           barrierDismissible: false,
           builder: (context) => AlertDialog(
             title: const Icon(Icons.check_circle, color: Colors.green, size: 60),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Sale Completed!',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+            content: SingleChildScrollView( // Added scroll for small screens
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Sale Completed!',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                _buildReceiptItem('Invoice', invoiceNumber),
-                _buildReceiptItem('Customer', _customerNameController.text),
-                _buildReceiptItem('Total', Currency.format(_total)),
-                _buildReceiptItem('Payment', _paymentMethod),
-              ],
+                  const SizedBox(height: 16),
+                  _buildReceiptItem('Invoice', invoiceNumber),
+                  _buildReceiptItem('Customer', _customerNameController.text),
+                  _buildReceiptItem('Total', Currency.format(_total)),
+                  _buildReceiptItem('Payment', _paymentMethod),
+                ],
+              ),
             ),
             actions: [
               TextButton(
@@ -332,9 +334,12 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
             label,
             style: TextStyle(color: Colors.grey.shade600),
           ),
-          Text(
-            value,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+          Flexible( // Added Flexible to prevent overflow
+            child: Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
@@ -343,6 +348,10 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final isSmallScreen = mediaQuery.size.width < 600;
+    final isPortrait = mediaQuery.orientation == Orientation.portrait;
+
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
@@ -359,30 +368,71 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
       ),
       body: _isLoading
           ? _buildLoadingState()
-          : Row(
+          : SafeArea( // Added SafeArea
+              child: isSmallScreen && isPortrait
+                  ? _buildMobileLayout() // Mobile layout (stacked)
+                  : _buildTabletLayout(), // Tablet layout (side by side)
+            ),
+    );
+  }
+
+  // Tablet layout - side by side
+  Widget _buildTabletLayout() {
+    return Row(
+      children: [
+        // Products panel (left side)
+        Expanded(
+          flex: 2,
+          child: _buildProductsPanel(),
+        ),
+        // Cart panel (right side)
+        Container(
+          width: 380, // Slightly reduced from 400
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(-5, 0),
+              ),
+            ],
+          ),
+          child: _buildCartPanel(),
+        ),
+      ],
+    );
+  }
+
+  // Mobile layout - stacked with tab navigation
+  Widget _buildMobileLayout() {
+    return DefaultTabController(
+      length: 2,
+      child: Column(
+        children: [
+          // Tab bar
+          Container(
+            color: Colors.white,
+            child: const TabBar(
+              tabs: [
+                Tab(icon: Icon(Icons.inventory), text: 'Products'),
+                Tab(icon: Icon(Icons.shopping_cart), text: 'Cart'),
+              ],
+              indicatorColor: AppTheme.primaryColor,
+              labelColor: AppTheme.primaryColor,
+            ),
+          ),
+          // Tab views
+          Expanded(
+            child: TabBarView(
               children: [
-                // Products panel (left side)
-                Expanded(
-                  flex: 2,
-                  child: _buildProductsPanel(),
-                ),
-                // Cart panel (right side)
-                Container(
-                  width: 400,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: const Offset(-5, 0),
-                      ),
-                    ],
-                  ),
-                  child: _buildCartPanel(),
-                ),
+                _buildProductsPanel(),
+                _buildCartPanel(),
               ],
             ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -413,11 +463,13 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
   }
 
   Widget _buildProductsPanel() {
+    final isSmallScreen = MediaQuery.of(context).size.width < 600;
+    
     return Column(
       children: [
         // Search and filter bar
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12), // Reduced padding
           decoration: BoxDecoration(
             color: Colors.white,
             boxShadow: [
@@ -433,7 +485,7 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
               // Search field
               Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(12),
                   color: Colors.grey.shade50,
                   border: Border.all(color: Colors.grey.shade200),
                 ),
@@ -441,11 +493,11 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
                   controller: _searchController,
                   focusNode: _searchFocusNode,
                   decoration: InputDecoration(
-                    hintText: 'Search products by name or barcode...',
-                    prefixIcon: Icon(Icons.search, color: AppTheme.primaryColor),
+                    hintText: isSmallScreen ? 'Search...' : 'Search products by name or barcode...',
+                    prefixIcon: Icon(Icons.search, color: AppTheme.primaryColor, size: 20),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear),
+                            icon: const Icon(Icons.clear, size: 18),
                             onPressed: () {
                               _searchController.clear();
                               _applyFilters();
@@ -453,24 +505,33 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
                           )
                         : null,
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    isDense: true,
                   ),
                   onChanged: (value) => _applyFilters(),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               
               // Category filters
               if (_products.isNotEmpty)
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: _getCategories().map((category) {
+                SizedBox(
+                  height: 40,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _getCategories().length,
+                    itemBuilder: (context, index) {
+                      final category = _getCategories()[index];
                       final isSelected = category == _selectedCategory;
                       return Padding(
-                        padding: const EdgeInsets.only(right: 8),
+                        padding: const EdgeInsets.only(right: 6),
                         child: FilterChip(
-                          label: Text(category),
+                          label: Text(
+                            category,
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 11 : 13,
+                            ),
+                          ),
                           selected: isSelected,
                           onSelected: (selected) {
                             setState(() {
@@ -483,10 +544,16 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
                           checkmarkColor: Colors.white,
                           labelStyle: TextStyle(
                             color: isSelected ? Colors.white : Colors.grey.shade700,
+                            fontSize: isSmallScreen ? 11 : 13,
                           ),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isSmallScreen ? 8 : 12,
+                            vertical: 8,
+                          ),
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
                       );
-                    }).toList(),
+                    },
                   ),
                 ),
             ],
@@ -501,17 +568,18 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
                   children: [
                     // Stats bar
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       color: AppTheme.primaryColor.withOpacity(0.05),
                       child: Row(
                         children: [
-                          Icon(Icons.inventory, size: 16, color: AppTheme.primaryColor),
-                          const SizedBox(width: 8),
+                          Icon(Icons.inventory, size: 14, color: AppTheme.primaryColor),
+                          const SizedBox(width: 4),
                           Text(
-                            '${_filteredProducts.length} products available',
+                            '${_filteredProducts.length} products',
                             style: TextStyle(
                               color: AppTheme.primaryColor,
                               fontWeight: FontWeight.w600,
+                              fontSize: 12,
                             ),
                           ),
                         ],
@@ -520,17 +588,17 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
                     // Products grid
                     Expanded(
                       child: GridView.builder(
-                        padding: const EdgeInsets.all(16),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          childAspectRatio: 0.75,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
+                        padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: isSmallScreen ? 2 : 3,
+                          childAspectRatio: isSmallScreen ? 0.8 : 0.75,
+                          crossAxisSpacing: isSmallScreen ? 8 : 12,
+                          mainAxisSpacing: isSmallScreen ? 8 : 12,
                         ),
                         itemCount: _filteredProducts.length,
                         itemBuilder: (context, index) {
                           final product = _filteredProducts[index];
-                          return _buildProductCard(product, index);
+                          return _buildProductCard(product, index, isSmallScreen);
                         },
                       ),
                     ),
@@ -541,7 +609,7 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
     );
   }
 
-  Widget _buildProductCard(Product product, int index) {
+  Widget _buildProductCard(Product product, int index, bool isSmallScreen) {
     final isLowStock = product.quantity <= product.lowStockThreshold;
     
     return TweenAnimationBuilder(
@@ -556,15 +624,15 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
       },
       child: Material(
         elevation: 2,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         color: Colors.white,
         child: InkWell(
           onTap: () => _addToCart(product),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           child: Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(12),
               border: isLowStock
                   ? Border.all(color: AppTheme.warningColor.withOpacity(0.3))
                   : null,
@@ -577,24 +645,24 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: isLowStock ? AppTheme.warningColor.withOpacity(0.1) : Colors.green.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             isLowStock ? Icons.warning_amber : Icons.check_circle,
-                            size: 12,
+                            size: 10,
                             color: isLowStock ? AppTheme.warningColor : Colors.green,
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 2),
                           Text(
                             '${product.quantity}',
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: 9,
                               color: isLowStock ? AppTheme.warningColor : Colors.green,
                               fontWeight: FontWeight.bold,
                             ),
@@ -604,18 +672,18 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
                     ),
                     Icon(
                       Icons.add_shopping_cart,
-                      size: 16,
+                      size: 14,
                       color: AppTheme.primaryColor.withOpacity(0.5),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 
                 // Product icon
                 Center(
                   child: Container(
-                    width: 60,
-                    height: 60,
+                    width: isSmallScreen ? 40 : 50,
+                    height: isSmallScreen ? 40 : 50,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
@@ -627,28 +695,28 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
                     ),
                     child: Icon(
                       Icons.inventory_2_outlined,
-                      size: 30,
+                      size: isSmallScreen ? 20 : 25,
                       color: AppTheme.primaryColor,
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 
                 // Product name
                 Text(
                   product.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 13,
+                    fontSize: isSmallScreen ? 11 : 12,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 
                 // Category
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                   decoration: BoxDecoration(
                     color: AppTheme.secondaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(4),
@@ -656,9 +724,11 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
                   child: Text(
                     product.category,
                     style: TextStyle(
-                      fontSize: 9,
+                      fontSize: isSmallScreen ? 7 : 8,
                       color: AppTheme.secondaryColor,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const Spacer(),
@@ -670,16 +740,19 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
                     Text(
                       'Price',
                       style: TextStyle(
-                        fontSize: 9,
+                        fontSize: isSmallScreen ? 7 : 8,
                         color: Colors.grey.shade600,
                       ),
                     ),
-                    Text(
-                      Currency.format(product.sellingPrice),
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.successColor,
+                    Flexible(
+                      child: Text(
+                        Currency.format(product.sellingPrice),
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 11 : 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.successColor,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -694,43 +767,49 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
 
   Widget _buildNoProductsFound() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.inventory_2_outlined,
-            size: 80,
-            color: Colors.grey.shade400,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No products found',
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey.shade600,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.inventory_2_outlined,
+              size: 60,
+              color: Colors.grey.shade400,
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _searchController.text.isNotEmpty
-                ? 'Try a different search term'
-                : 'No products available in this category',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade500,
+            const SizedBox(height: 16),
+            Text(
+              'No products found',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey.shade600,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              _searchController.text.isNotEmpty
+                  ? 'Try a different search term'
+                  : 'No products available in this category',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildCartPanel() {
+    final isSmallScreen = MediaQuery.of(context).size.width < 600;
+    
     return Column(
       children: [
         // Cart header with total
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
@@ -740,50 +819,54 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
             children: [
               Row(
                 children: [
-                  const Icon(Icons.shopping_cart, color: Colors.white),
+                  Icon(Icons.shopping_cart, color: Colors.white, size: isSmallScreen ? 18 : 24),
                   const SizedBox(width: 8),
                   Text(
                     'Shopping Cart',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: isSmallScreen ? 16 : 18,
                       fontWeight: FontWeight.bold,
                       color: Colors.white.withOpacity(0.9),
                     ),
                   ),
                   const Spacer(),
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.2),
                       shape: BoxShape.circle,
                     ),
                     child: Text(
                       '${_cartItems.length}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
+                        fontSize: isSmallScreen ? 12 : 14,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Total:',
                     style: TextStyle(
                       color: Colors.white70,
-                      fontSize: 14,
+                      fontSize: isSmallScreen ? 12 : 14,
                     ),
                   ),
-                  Text(
-                    Currency.format(_total),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+                  Flexible(
+                    child: Text(
+                      Currency.format(_total),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: isSmallScreen ? 20 : 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -795,38 +878,38 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
         // Cart items
         Expanded(
           child: _cartItems.isEmpty
-              ? _buildEmptyCart()
+              ? _buildEmptyCart(isSmallScreen)
               : ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
                   itemCount: _cartItems.length,
                   itemBuilder: (context, index) {
                     final item = _cartItems[index];
-                    return _buildCartItem(item, index);
+                    return _buildCartItem(item, index, isSmallScreen);
                   },
                 ),
         ),
 
         // Checkout section
-        _buildCheckoutSection(),
+        _buildCheckoutSection(isSmallScreen),
       ],
     );
   }
 
-  Widget _buildEmptyCart() {
+  Widget _buildEmptyCart(bool isSmallScreen) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.shopping_cart_outlined,
-            size: 80,
+            size: isSmallScreen ? 60 : 80,
             color: Colors.grey.shade400,
           ),
           const SizedBox(height: 16),
           Text(
             'Your cart is empty',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isSmallScreen ? 16 : 18,
               fontWeight: FontWeight.bold,
               color: Colors.grey.shade700,
             ),
@@ -835,7 +918,7 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
           Text(
             'Tap on products to add them',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: isSmallScreen ? 12 : 14,
               color: Colors.grey.shade500,
             ),
           ),
@@ -844,7 +927,7 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
     );
   }
 
-  Widget _buildCartItem(SaleItem item, int index) {
+  Widget _buildCartItem(SaleItem item, int index, bool isSmallScreen) {
     return TweenAnimationBuilder(
       duration: Duration(milliseconds: 300 + (index * 50)),
       tween: Tween<double>(begin: 0, end: 1),
@@ -859,10 +942,10 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
         );
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withOpacity(0.1),
@@ -872,7 +955,7 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
           child: Column(
             children: [
               Row(
@@ -880,19 +963,19 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
                 children: [
                   // Product icon
                   Container(
-                    width: 40,
-                    height: 40,
+                    width: isSmallScreen ? 32 : 36,
+                    height: isSmallScreen ? 32 : 36,
                     decoration: BoxDecoration(
                       color: AppTheme.primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: Icon(
                       Icons.inventory_2_outlined,
-                      size: 20,
+                      size: isSmallScreen ? 16 : 18,
                       color: AppTheme.primaryColor,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   
                   // Product details
                   Expanded(
@@ -901,18 +984,18 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
                       children: [
                         Text(
                           item.productName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                            fontSize: isSmallScreen ? 12 : 13,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         Text(
                           '${Currency.format(item.sellingPrice)} each',
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: isSmallScreen ? 9 : 10,
                             color: Colors.grey.shade600,
                           ),
                         ),
@@ -922,14 +1005,14 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
                   
                   // Remove button
                   IconButton(
-                    icon: const Icon(Icons.close, size: 16),
+                    icon: Icon(Icons.close, size: isSmallScreen ? 14 : 16),
                     onPressed: () => _removeFromCart(index),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               
               // Quantity controls
               Row(
@@ -938,7 +1021,11 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
                   Row(
                     children: [
                       IconButton(
-                        icon: Icon(Icons.remove_circle_outline, color: AppTheme.primaryColor),
+                        icon: Icon(
+                          Icons.remove_circle_outline,
+                          color: AppTheme.primaryColor,
+                          size: isSmallScreen ? 18 : 20,
+                        ),
                         onPressed: () {
                           if (item.quantity > 1) {
                             _updateQuantity(index, item.quantity - 1);
@@ -950,36 +1037,38 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
                         constraints: const BoxConstraints(),
                       ),
                       Container(
-                        width: 40,
+                        width: isSmallScreen ? 30 : 35,
                         alignment: Alignment.center,
                         child: Text(
                           '${item.quantity}',
-                          style: const TextStyle(
-                            fontSize: 16,
+                          style: TextStyle(
+                            fontSize: isSmallScreen ? 14 : 15,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                       IconButton(
-                        icon: Icon(Icons.add_circle_outline, color: AppTheme.primaryColor),
+                        icon: Icon(
+                          Icons.add_circle_outline,
+                          color: AppTheme.primaryColor,
+                          size: isSmallScreen ? 18 : 20,
+                        ),
                         onPressed: () => _updateQuantity(index, item.quantity + 1),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),
                     ],
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        Currency.format(item.subtotal),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.green,
-                        ),
+                  Flexible(
+                    child: Text(
+                      Currency.format(item.subtotal),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: isSmallScreen ? 13 : 14,
+                        color: Colors.green,
                       ),
-                    ],
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),
@@ -990,9 +1079,9 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
     );
   }
 
-  Widget _buildCheckoutSection() {
+  Widget _buildCheckoutSection(bool isSmallScreen) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -1010,31 +1099,45 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
             controller: _customerNameController,
             decoration: InputDecoration(
               labelText: 'Customer Name *',
-              hintText: 'Enter customer name',
-              prefixIcon: Icon(Icons.person, color: AppTheme.primaryColor),
+              hintText: 'Enter name',
+              labelStyle: TextStyle(fontSize: isSmallScreen ? 12 : 13),
+              hintStyle: TextStyle(fontSize: isSmallScreen ? 12 : 13),
+              prefixIcon: Icon(Icons.person, color: AppTheme.primaryColor, size: isSmallScreen ? 18 : 20),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
               ),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: isSmallScreen ? 8 : 12,
+                vertical: isSmallScreen ? 8 : 12,
+              ),
+              isDense: true,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
 
           // Tax and payment row
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
                   value: _paymentMethod,
                   decoration: InputDecoration(
                     labelText: 'Payment',
-                    prefixIcon: Icon(Icons.payment, color: AppTheme.primaryColor),
+                    labelStyle: TextStyle(fontSize: isSmallScreen ? 11 : 12),
+                    prefixIcon: Icon(Icons.payment, color: AppTheme.primaryColor, size: isSmallScreen ? 16 : 18),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                     ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: isSmallScreen ? 6 : 8,
+                      vertical: isSmallScreen ? 6 : 8,
+                    ),
+                    isDense: true,
                   ),
                   items: _paymentMethods.map((method) {
                     return DropdownMenuItem(
@@ -1043,11 +1146,14 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
                         children: [
                           Icon(
                             _getPaymentIcon(method),
-                            size: 16,
+                            size: isSmallScreen ? 12 : 14,
                             color: _getPaymentColor(method),
                           ),
-                          const SizedBox(width: 8),
-                          Text(method),
+                          const SizedBox(width: 4),
+                          Text(
+                            method,
+                            style: TextStyle(fontSize: isSmallScreen ? 11 : 12),
+                          ),
                         ],
                       ),
                     );
@@ -1055,29 +1161,39 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
                   onChanged: (value) => setState(() => _paymentMethod = value!),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Expanded(
                 child: Row(
                   children: [
-                    Expanded(
+                    Flexible(
                       child: CheckboxListTile(
-                        title: const Text('Tax'),
+                        title: Text(
+                          'Tax',
+                          style: TextStyle(fontSize: isSmallScreen ? 11 : 12),
+                        ),
                         value: _applyTax,
                         onChanged: (value) => setState(() => _applyTax = value ?? false),
                         dense: true,
                         contentPadding: EdgeInsets.zero,
+                        controlAffinity: ListTileControlAffinity.leading,
                       ),
                     ),
                     if (_applyTax)
-                      Expanded(
+                      Flexible(
                         child: TextFormField(
                           controller: _taxPercentageController,
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
                             labelText: '%',
+                            labelStyle: TextStyle(fontSize: isSmallScreen ? 11 : 12),
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(8),
                             ),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: isSmallScreen ? 6 : 8,
+                              vertical: isSmallScreen ? 6 : 8,
+                            ),
+                            isDense: true,
                           ),
                           onChanged: (value) => setState(() {}),
                         ),
@@ -1087,66 +1203,75 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
 
           // Discount
           TextField(
             controller: _discountController,
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
-              labelText: 'Discount (Optional)',
-              prefixIcon: Icon(Icons.discount, color: AppTheme.warningColor),
+              labelText: 'Discount',
+              hintText: 'Optional',
+              labelStyle: TextStyle(fontSize: isSmallScreen ? 12 : 13),
+              hintStyle: TextStyle(fontSize: isSmallScreen ? 12 : 13),
+              prefixIcon: Icon(Icons.discount, color: AppTheme.warningColor, size: isSmallScreen ? 18 : 20),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
               ),
               prefixText: '₪ ',
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: isSmallScreen ? 8 : 12,
+                vertical: isSmallScreen ? 8 : 12,
+              ),
+              isDense: true,
             ),
             onChanged: (value) => setState(() {}),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Summary
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
             decoration: BoxDecoration(
               color: Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
               children: [
-                _buildSummaryRow('Subtotal:', Currency.format(_subtotal)),
-                const SizedBox(height: 4),
+                _buildSummaryRow('Subtotal:', Currency.format(_subtotal), isSmallScreen),
+                const SizedBox(height: 2),
                 if (_applyTax) ...[
                   _buildSummaryRow(
                     'Tax (${_taxPercentageController.text.isEmpty ? '0' : _taxPercentageController.text}%):',
                     Currency.format(_tax),
+                    isSmallScreen,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                 ],
                 if (_discount > 0) ...[
-                  _buildSummaryRow('Discount:', '-${Currency.format(_discount)}', isDiscount: true),
-                  const SizedBox(height: 4),
+                  _buildSummaryRow('Discount:', '-${Currency.format(_discount)}', isSmallScreen, isDiscount: true),
+                  const SizedBox(height: 2),
                 ],
-                const Divider(height: 16),
-                _buildSummaryRow('Total:', Currency.format(_total), isTotal: true),
+                const Divider(height: 12),
+                _buildSummaryRow('Total:', Currency.format(_total), isSmallScreen, isTotal: true),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Complete button
           SizedBox(
             width: double.infinity,
-            height: 50,
+            height: isSmallScreen ? 44 : 48,
             child: ElevatedButton(
               onPressed: _isProcessing ? null : _completeSale,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                elevation: 3,
+                elevation: 2,
               ),
               child: _isProcessing
                   ? const SizedBox(
@@ -1157,15 +1282,15 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
                         strokeWidth: 2,
                       ),
                     )
-                  : const Row(
+                  : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.check_circle),
-                        SizedBox(width: 8),
+                        Icon(Icons.check_circle, size: isSmallScreen ? 18 : 20),
+                        const SizedBox(width: 6),
                         Text(
                           'Complete Sale',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: isSmallScreen ? 14 : 15,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -1178,24 +1303,34 @@ class _CreateSaleScreenState extends State<CreateSaleScreen> with TickerProvider
     );
   }
 
-  Widget _buildSummaryRow(String label, String value, {bool isDiscount = false, bool isTotal = false}) {
+  Widget _buildSummaryRow(String label, String value, bool isSmallScreen, {bool isDiscount = false, bool isTotal = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: isTotal ? 16 : 14,
-            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-            color: Colors.grey.shade700,
+        Flexible(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: isTotal 
+                ? (isSmallScreen ? 14 : 15) 
+                : (isSmallScreen ? 11 : 12),
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+              color: Colors.grey.shade700,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: isTotal ? 18 : 14,
-            fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
-            color: isDiscount ? Colors.red : (isTotal ? Colors.green.shade700 : Colors.black87),
+        Flexible(
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: isTotal 
+                ? (isSmallScreen ? 16 : 18) 
+                : (isSmallScreen ? 12 : 13),
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
+              color: isDiscount ? Colors.red : (isTotal ? Colors.green.shade700 : Colors.black87),
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],

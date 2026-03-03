@@ -147,9 +147,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
     return SnackBar(
       content: Row(
         children: [
-          Icon(icon, color: Colors.white),
-          const SizedBox(width: 12),
-          Expanded(child: Text(message)),
+          Icon(icon, color: Colors.white, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+          ),
         ],
       ),
       backgroundColor: color,
@@ -196,190 +202,236 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final isSmallScreen = mediaQuery.size.width < 360;
+    final padding = mediaQuery.padding;
+
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         title: const Text('Notifications'),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: Container(
-            color: Colors.white,
-            child: Column(
-              children: [
-                // Stats bar
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.05),
-                    border: Border(
-                      bottom: BorderSide(color: Colors.grey.shade200),
-                    ),
+          preferredSize: const Size.fromHeight(100),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Stats bar
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 12 : 16,
+                  vertical: isSmallScreen ? 6 : 8,
+                ),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.05),
+                  border: Border(
+                    bottom: BorderSide(color: Colors.grey.shade200),
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          _notifications.length.toString(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(isSmallScreen ? 4 : 6),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        _notifications.length > 99 ? '99+' : _notifications.length.toString(),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: isSmallScreen ? 10 : 12,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Text(
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
                         'Total Notifications',
                         style: TextStyle(
                           color: Colors.grey.shade700,
                           fontWeight: FontWeight.w600,
+                          fontSize: isSmallScreen ? 12 : 14,
                         ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
-                      const Spacer(),
-                      if (_unreadCount > 0)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  color: AppTheme.primaryColor,
-                                  shape: BoxShape.circle,
-                                ),
+                    ),
+                    const Spacer(),
+                    if (_unreadCount > 0)
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isSmallScreen ? 6 : 8,
+                          vertical: isSmallScreen ? 2 : 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: isSmallScreen ? 6 : 8,
+                              height: isSmallScreen ? 6 : 8,
+                              decoration: const BoxDecoration(
+                                color: AppTheme.primaryColor,
+                                shape: BoxShape.circle,
                               ),
-                              const SizedBox(width: 6),
-                              Text(
-                                '$_unreadCount unread',
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                '${_unreadCount > 99 ? '99+' : _unreadCount} unread',
                                 style: TextStyle(
                                   color: AppTheme.primaryColor,
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 12,
+                                  fontSize: isSmallScreen ? 10 : 12,
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                // Filter chips
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: _filters.map((filter) {
-                              final isSelected = filter == _selectedFilter;
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 8),
-                                child: FilterChip(
-                                  label: Text(filter),
-                                  selected: isSelected,
-                                  onSelected: (selected) {
-                                    setState(() {
-                                      _selectedFilter = filter;
-                                    });
-                                  },
-                                  backgroundColor: Colors.grey.shade100,
-                                  selectedColor: AppTheme.primaryColor,
-                                  checkmarkColor: Colors.white,
-                                  labelStyle: TextStyle(
-                                    color: isSelected ? Colors.white : Colors.grey.shade700,
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                  ),
-                                  elevation: isSelected ? 2 : 0,
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ),
-                      if (_notifications.isNotEmpty) ...[
-                        const SizedBox(width: 8),
-                        PopupMenuButton<String>(
-                          icon: Icon(Icons.more_vert, color: AppTheme.primaryColor),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          onSelected: (value) {
-                            if (value == 'mark_all') {
-                              _markAllAsRead();
-                            } else if (value == 'clear_all') {
-                              _clearAll();
-                            }
-                          },
-                          itemBuilder: (context) => [
-                            PopupMenuItem(
-                              value: 'mark_all',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.done_all, size: 18, color: Colors.green),
-                                  const SizedBox(width: 8),
-                                  const Text('Mark all as read'),
-                                ],
-                              ),
-                            ),
-                            PopupMenuItem(
-                              value: 'clear_all',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.delete_sweep, size: 18, color: Colors.red),
-                                  const SizedBox(width: 8),
-                                  const Text('Clear all'),
-                                ],
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
                               ),
                             ),
                           ],
                         ),
-                      ],
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              // Filter chips and actions
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 12 : 16,
+                  vertical: isSmallScreen ? 6 : 8,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: _filters.map((filter) {
+                            final isSelected = filter == _selectedFilter;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 6),
+                              child: FilterChip(
+                                label: Text(
+                                  filter,
+                                  style: TextStyle(
+                                    fontSize: isSmallScreen ? 11 : 13,
+                                  ),
+                                ),
+                                selected: isSelected,
+                                onSelected: (selected) {
+                                  setState(() {
+                                    _selectedFilter = filter;
+                                  });
+                                },
+                                backgroundColor: Colors.grey.shade100,
+                                selectedColor: AppTheme.primaryColor,
+                                checkmarkColor: Colors.white,
+                                labelStyle: TextStyle(
+                                  color: isSelected ? Colors.white : Colors.grey.shade700,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  fontSize: isSmallScreen ? 11 : 13,
+                                ),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isSmallScreen ? 8 : 12,
+                                  vertical: isSmallScreen ? 4 : 8,
+                                ),
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                elevation: isSelected ? 2 : 0,
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                    if (_notifications.isNotEmpty) ...[
+                      const SizedBox(width: 4),
+                      PopupMenuButton<String>(
+                        icon: Icon(
+                          Icons.more_vert,
+                          color: AppTheme.primaryColor,
+                          size: isSmallScreen ? 20 : 24,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        onSelected: (value) {
+                          if (value == 'mark_all') {
+                            _markAllAsRead();
+                          } else if (value == 'clear_all') {
+                            _clearAll();
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          PopupMenuItem(
+                            value: 'mark_all',
+                            height: isSmallScreen ? 40 : 48,
+                            child: Row(
+                              children: [
+                                Icon(Icons.done_all, size: isSmallScreen ? 16 : 18, color: Colors.green),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Mark all as read',
+                                  style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+                                ),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'clear_all',
+                            height: isSmallScreen ? 40 : 48,
+                            child: Row(
+                              children: [
+                                Icon(Icons.delete_sweep, size: isSmallScreen ? 16 : 18, color: Colors.red),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Clear all',
+                                  style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
-      body: _isLoading
-          ? _buildLoadingState()
-          : _filteredNotifications.isEmpty
-              ? _buildEmptyState()
-              : _buildNotificationsList(),
+      body: SafeArea(
+        child: _isLoading
+            ? _buildLoadingState(isSmallScreen)
+            : _filteredNotifications.isEmpty
+                ? _buildEmptyState(isSmallScreen)
+                : _buildNotificationsList(isSmallScreen),
+      ),
     );
   }
 
-  Widget _buildLoadingState() {
+  Widget _buildLoadingState(bool isSmallScreen) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           SizedBox(
-            width: 60,
-            height: 60,
+            width: isSmallScreen ? 40 : 50,
+            height: isSmallScreen ? 40 : 50,
             child: CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
               strokeWidth: 3,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           Text(
             'Loading notifications...',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: isSmallScreen ? 14 : 16,
               color: Colors.grey.shade600,
             ),
           ),
@@ -388,75 +440,82 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(bool isSmallScreen) {
     String message = '';
+    String subMessage = '';
     IconData icon = Icons.notifications_none;
     
     if (_selectedFilter == 'Unread') {
       message = 'No unread notifications';
+      subMessage = 'All caught up!';
       icon = Icons.mark_chat_read;
     } else if (_selectedFilter == 'Read') {
       message = 'No read notifications';
+      subMessage = 'Notifications you read will appear here';
       icon = Icons.drafts;
     } else {
       message = 'No notifications yet';
+      subMessage = 'You\'re all caught up!';
       icon = Icons.notifications_off_outlined;
     }
 
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          TweenAnimationBuilder(
-            duration: const Duration(milliseconds: 800),
-            tween: Tween<double>(begin: 0, end: 1),
-            curve: Curves.elasticOut,
-            builder: (context, double value, child) {
-              return Transform.scale(
-                scale: value,
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.1),
-                    shape: BoxShape.circle,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TweenAnimationBuilder(
+              duration: const Duration(milliseconds: 800),
+              tween: Tween<double>(begin: 0, end: 1),
+              curve: Curves.elasticOut,
+              builder: (context, double value, child) {
+                return Transform.scale(
+                  scale: value,
+                  child: Container(
+                    width: isSmallScreen ? 80 : 100,
+                    height: isSmallScreen ? 80 : 100,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      icon,
+                      size: isSmallScreen ? 35 : 45,
+                      color: AppTheme.primaryColor.withOpacity(0.5),
+                    ),
                   ),
-                  child: Icon(
-                    icon,
-                    size: 50,
-                    color: AppTheme.primaryColor.withOpacity(0.5),
-                  ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 24),
-          Text(
-            message,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade800,
+                );
+              },
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _selectedFilter == 'All' 
-                ? 'You\'re all caught up!'
-                : 'Try changing the filter',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade600,
+            const SizedBox(height: 16),
+            Text(
+              message,
+              style: TextStyle(
+                fontSize: isSmallScreen ? 16 : 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade800,
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              subMessage,
+              style: TextStyle(
+                fontSize: isSmallScreen ? 12 : 14,
+                color: Colors.grey.shade600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildNotificationsList() {
+  Widget _buildNotificationsList(bool isSmallScreen) {
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
       itemCount: _filteredNotifications.length,
       itemBuilder: (context, index) {
         final notification = _filteredNotifications[index];
@@ -469,7 +528,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
           curve: Curves.easeOut,
           builder: (context, double value, child) {
             return Transform.translate(
-              offset: Offset(0, 30 * (1 - value)),
+              offset: Offset(0, 20 * (1 - value)),
               child: Opacity(
                 opacity: value,
                 child: child,
@@ -482,21 +541,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
             background: Container(
               margin: const EdgeInsets.only(bottom: 8),
               alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: 20),
+              padding: const EdgeInsets.only(right: 16),
               decoration: BoxDecoration(
                 color: Colors.red,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.delete, color: Colors.white),
-                  SizedBox(width: 8),
+                  Icon(Icons.delete, color: Colors.white, size: isSmallScreen ? 18 : 20),
+                  const SizedBox(width: 4),
                   Text(
                     'Delete',
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
+                      fontSize: isSmallScreen ? 12 : 14,
                     ),
                   ),
                 ],
@@ -508,8 +569,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
             child: Container(
               margin: const EdgeInsets.only(bottom: 8),
               child: Material(
-                elevation: isRead ? 1 : 3,
-                borderRadius: BorderRadius.circular(16),
+                elevation: isRead ? 1 : 2,
+                borderRadius: BorderRadius.circular(12),
                 color: Colors.white,
                 child: InkWell(
                   onTap: () {
@@ -517,16 +578,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
                       _markAsRead(notification['id']);
                     }
                   },
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                   child: Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12),
                       border: !isRead
                           ? Border(
                               left: BorderSide(
                                 color: color,
-                                width: 4,
+                                width: 3,
                               ),
                             )
                           : null,
@@ -537,8 +598,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
                         // Animated icon
                         AnimatedContainer(
                           duration: const Duration(milliseconds: 300),
-                          width: 50,
-                          height: 50,
+                          width: isSmallScreen ? 36 : 40,
+                          height: isSmallScreen ? 36 : 40,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: isRead
@@ -553,11 +614,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
                             child: Icon(
                               _getNotificationIcon(notification['type'] ?? ''),
                               color: Colors.white,
-                              size: 24,
+                              size: isSmallScreen ? 18 : 20,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 10),
                         
                         // Content
                         Expanded(
@@ -570,26 +631,29 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
                                     child: Text(
                                       _getNotificationTitle(notification['type'] ?? ''),
                                       style: TextStyle(
-                                        fontSize: 16,
+                                        fontSize: isSmallScreen ? 13 : 14,
                                         fontWeight: isRead ? FontWeight.w600 : FontWeight.bold,
                                         color: isRead ? Colors.grey.shade700 : Colors.black87,
                                       ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
                                     ),
                                   ),
+                                  const SizedBox(width: 4),
                                   if (!isRead)
                                     Container(
                                       padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
+                                        horizontal: 6,
+                                        vertical: 2,
                                       ),
                                       decoration: BoxDecoration(
                                         color: color.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Text(
                                         'NEW',
                                         style: TextStyle(
-                                          fontSize: 10,
+                                          fontSize: isSmallScreen ? 8 : 9,
                                           color: color,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -597,52 +661,60 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
                                     ),
                                 ],
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 4),
                               Text(
                                 notification['message'] ?? '',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: isSmallScreen ? 11 : 12,
                                   color: Colors.grey.shade800,
                                 ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
                               if (notification['product_name'] != null && 
                                   notification['product_name'].isNotEmpty) ...[
                                 const SizedBox(height: 4),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
+                                    horizontal: 6,
+                                    vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
                                     color: color.withOpacity(0.05),
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
                                     'Product: ${notification['product_name']}',
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: isSmallScreen ? 9 : 10,
                                       color: color,
                                       fontWeight: FontWeight.w500,
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 4),
                               Row(
                                 children: [
                                   Icon(
                                     Icons.access_time,
-                                    size: 12,
+                                    size: isSmallScreen ? 10 : 11,
                                     color: Colors.grey.shade500,
                                   ),
                                   const SizedBox(width: 4),
-                                  Text(
-                                    DateFormat('MMM d, yyyy • h:mm a').format(
-                                      DateTime.parse(notification['created_at']),
-                                    ),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey.shade600,
+                                  Expanded(
+                                    child: Text(
+                                      DateFormat('MMM d, yyyy • h:mm a').format(
+                                        DateTime.parse(notification['created_at']),
+                                      ),
+                                      style: TextStyle(
+                                        fontSize: isSmallScreen ? 9 : 10,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
                                     ),
                                   ),
                                 ],
@@ -652,21 +724,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> with TickerPr
                         ),
                         
                         // Action buttons
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            if (!isRead)
-                              IconButton(
-                                icon: Icon(
-                                  Icons.check_circle_outline,
-                                  color: Colors.green,
-                                ),
-                                onPressed: () => _markAsRead(notification['id']),
-                                tooltip: 'Mark as read',
-                                splashRadius: 24,
+                        if (!isRead)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4),
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.check_circle_outline,
+                                color: Colors.green,
+                                size: isSmallScreen ? 18 : 20,
                               ),
-                          ],
-                        ),
+                              onPressed: () => _markAsRead(notification['id']),
+                              tooltip: 'Mark as read',
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                          ),
                       ],
                     ),
                   ),

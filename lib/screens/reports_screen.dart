@@ -1,4 +1,3 @@
-// lib/screens/reports_screen.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/report_service.dart';
@@ -14,14 +13,14 @@ class ReportsScreen extends StatefulWidget {
   State<ReportsScreen> createState() => _ReportsScreenState();
 }
 
-class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateMixin { // Changed from SingleTickerProviderStateMixin
+class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateMixin {
   final ReportService _reportService = ReportService();
   final AuthService _authService = AuthService();
   
   UserModel? _currentUser;
   bool _isLoading = true;
   late TabController _tabController;
-  late AnimationController _animationController; // Add this
+  late AnimationController _animationController;
   
   Map<String, dynamic>? _dailyReport;
   Map<String, dynamic>? _monthlyReport;
@@ -39,9 +38,8 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     
-    // Initialize animation controller with TickerProviderStateMixin
     _animationController = AnimationController(
-      vsync: this, // Now this works with TickerProviderStateMixin
+      vsync: this,
       duration: const Duration(milliseconds: 800),
     );
     
@@ -51,7 +49,7 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
   @override
   void dispose() {
     _tabController.dispose();
-    _animationController.dispose(); // Don't forget to dispose
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -72,7 +70,6 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
     setState(() => _isLoading = true);
 
     try {
-      // Use try-catch for each report to isolate errors
       Map<String, dynamic>? daily;
       Map<String, dynamic>? monthly;
       Map<String, dynamic>? inventory;
@@ -147,12 +144,22 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
   }
 
   Future<void> _selectMonth() async {
-    // Simple implementation without dialog for now
-    setState(() {
-      _selectedMonth = DateTime.now().month;
-      _selectedYear = DateTime.now().year;
-    });
-    _loadAllReports();
+    // Show month picker dialog
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime(_selectedYear, _selectedMonth),
+      firstDate: DateTime(2020, 1),
+      lastDate: DateTime.now(),
+      initialDatePickerMode: DatePickerMode.year,
+    );
+    
+    if (picked != null) {
+      setState(() {
+        _selectedYear = picked.year;
+        _selectedMonth = picked.month;
+      });
+      _loadAllReports();
+    }
   }
 
   String _formatCurrency(double amount) {
@@ -161,54 +168,78 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final isSmallScreen = mediaQuery.size.width < 360;
+    final padding = mediaQuery.padding;
+
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('Reports & Analytics'),
+        title: Text(
+          'Reports & Analytics',
+          style: TextStyle(
+            fontSize: isSmallScreen ? 16 : 18,
+          ),
+        ),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,
           indicatorWeight: 3,
-          tabs: const [
-            Tab(icon: Icon(Icons.today), text: 'Daily'),
-            Tab(icon: Icon(Icons.calendar_month), text: 'Monthly'),
-            Tab(icon: Icon(Icons.inventory), text: 'Inventory'),
-            Tab(icon: Icon(Icons.star), text: 'Top Products'),
+          isScrollable: isSmallScreen, // Make scrollable on small screens
+          tabs: [
+            Tab(
+              icon: Icon(Icons.today, size: isSmallScreen ? 18 : 20),
+              child: isSmallScreen ? null : const Text('Daily'),
+            ),
+            Tab(
+              icon: Icon(Icons.calendar_month, size: isSmallScreen ? 18 : 20),
+              child: isSmallScreen ? null : const Text('Monthly'),
+            ),
+            Tab(
+              icon: Icon(Icons.inventory, size: isSmallScreen ? 18 : 20),
+              child: isSmallScreen ? null : const Text('Inventory'),
+            ),
+            Tab(
+              icon: Icon(Icons.star, size: isSmallScreen ? 18 : 20),
+              child: isSmallScreen ? null : const Text('Top'),
+            ),
           ],
         ),
       ),
-      body: _isLoading
-          ? _buildLoadingState()
-          : TabBarView(
-              controller: _tabController,
-              children: [
-                _buildDailyReport(),
-                _buildMonthlyReport(),
-                _buildInventoryReport(),
-                _buildTopProducts(),
-              ],
-            ),
+      body: SafeArea(
+        child: _isLoading
+            ? _buildLoadingState(isSmallScreen)
+            : TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildDailyReport(isSmallScreen),
+                  _buildMonthlyReport(isSmallScreen),
+                  _buildInventoryReport(isSmallScreen),
+                  _buildTopProducts(isSmallScreen),
+                ],
+              ),
+      ),
     );
   }
 
-  Widget _buildLoadingState() {
+  Widget _buildLoadingState(bool isSmallScreen) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           SizedBox(
-            width: 60,
-            height: 60,
+            width: isSmallScreen ? 40 : 50,
+            height: isSmallScreen ? 40 : 50,
             child: CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
               strokeWidth: 3,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           Text(
             'Loading reports...',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: isSmallScreen ? 14 : 16,
               color: Colors.grey.shade600,
             ),
           ),
@@ -217,60 +248,102 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildDailyReport() {
+  Widget _buildDailyReport(bool isSmallScreen) {
     if (_dailyReport == null) {
-      return const Center(
-        child: Text('No daily data available'),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.today,
+              size: isSmallScreen ? 40 : 50,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'No daily data available',
+              style: TextStyle(
+                fontSize: isSmallScreen ? 14 : 16,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
       );
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Date selector
           Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(isSmallScreen ? 10 : 12),
+            ),
             child: ListTile(
-              leading: const Icon(Icons.calendar_today),
-              title: Text(DateFormat('yyyy-MM-dd').format(_selectedDate)),
-              trailing: const Icon(Icons.edit),
+              leading: Icon(
+                Icons.calendar_today,
+                color: AppTheme.primaryColor,
+                size: isSmallScreen ? 18 : 20,
+              ),
+              title: Text(
+                DateFormat('yyyy-MM-dd').format(_selectedDate),
+                style: TextStyle(
+                  fontSize: isSmallScreen ? 13 : 14,
+                ),
+              ),
+              trailing: Icon(
+                Icons.edit,
+                size: isSmallScreen ? 18 : 20,
+              ),
               onTap: _selectDate,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: isSmallScreen ? 12 : 16,
+                vertical: isSmallScreen ? 8 : 12,
+              ),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: isSmallScreen ? 12 : 16),
 
           // Summary cards
           GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
+            crossAxisSpacing: isSmallScreen ? 8 : 10,
+            mainAxisSpacing: isSmallScreen ? 8 : 10,
+            childAspectRatio: isSmallScreen ? 1.3 : 1.4,
             children: [
               _buildSummaryCard(
                 'Total Sales',
-                _formatCurrency(_dailyReport!['total_sales'] ?? 0),
+                _formatCurrency((_dailyReport!['total_sales'] as num?)?.toDouble() ?? 0),
                 Icons.attach_money,
                 Colors.green,
+                isSmallScreen,
               ),
               _buildSummaryCard(
                 'Profit',
-                _formatCurrency(_dailyReport!['total_profit'] ?? 0),
+                _formatCurrency((_dailyReport!['total_profit'] as num?)?.toDouble() ?? 0),
                 Icons.trending_up,
                 Colors.blue,
+                isSmallScreen,
               ),
               _buildSummaryCard(
                 'Transactions',
                 (_dailyReport!['transactions'] ?? 0).toString(),
                 Icons.receipt,
                 Colors.orange,
+                isSmallScreen,
               ),
               _buildSummaryCard(
                 'Items Sold',
                 (_dailyReport!['total_items'] ?? 0).toString(),
                 Icons.shopping_cart,
                 Colors.purple,
+                isSmallScreen,
               ),
             ],
           ),
@@ -279,60 +352,102 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildMonthlyReport() {
+  Widget _buildMonthlyReport(bool isSmallScreen) {
     if (_monthlyReport == null) {
-      return const Center(
-        child: Text('No monthly data available'),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.calendar_month,
+              size: isSmallScreen ? 40 : 50,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'No monthly data available',
+              style: TextStyle(
+                fontSize: isSmallScreen ? 14 : 16,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
       );
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Month selector
           Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(isSmallScreen ? 10 : 12),
+            ),
             child: ListTile(
-              leading: const Icon(Icons.calendar_month),
-              title: Text('${DateFormat('MMMM').format(DateTime(2000, _selectedMonth))} $_selectedYear'),
-              trailing: const Icon(Icons.edit),
+              leading: Icon(
+                Icons.calendar_month,
+                color: AppTheme.primaryColor,
+                size: isSmallScreen ? 18 : 20,
+              ),
+              title: Text(
+                '${DateFormat('MMMM').format(DateTime(2000, _selectedMonth))} $_selectedYear',
+                style: TextStyle(
+                  fontSize: isSmallScreen ? 13 : 14,
+                ),
+              ),
+              trailing: Icon(
+                Icons.edit,
+                size: isSmallScreen ? 18 : 20,
+              ),
               onTap: _selectMonth,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: isSmallScreen ? 12 : 16,
+                vertical: isSmallScreen ? 8 : 12,
+              ),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: isSmallScreen ? 12 : 16),
 
           // Summary cards
           GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
+            crossAxisSpacing: isSmallScreen ? 8 : 10,
+            mainAxisSpacing: isSmallScreen ? 8 : 10,
+            childAspectRatio: isSmallScreen ? 1.3 : 1.4,
             children: [
               _buildSummaryCard(
                 'Total Sales',
-                _formatCurrency(_monthlyReport!['total_sales'] ?? 0),
+                _formatCurrency((_monthlyReport!['total_sales'] as num?)?.toDouble() ?? 0),
                 Icons.attach_money,
                 Colors.green,
+                isSmallScreen,
               ),
               _buildSummaryCard(
                 'Profit',
-                _formatCurrency(_monthlyReport!['total_profit'] ?? 0),
+                _formatCurrency((_monthlyReport!['total_profit'] as num?)?.toDouble() ?? 0),
                 Icons.trending_up,
                 Colors.blue,
+                isSmallScreen,
               ),
               _buildSummaryCard(
                 'Transactions',
                 (_monthlyReport!['transactions'] ?? 0).toString(),
                 Icons.receipt,
                 Colors.orange,
+                isSmallScreen,
               ),
               _buildSummaryCard(
                 'Avg/Day',
-                _formatCurrency(_monthlyReport!['average_per_day'] ?? 0),
+                _formatCurrency((_monthlyReport!['average_per_day'] as num?)?.toDouble() ?? 0),
                 Icons.calendar_view_day,
                 Colors.purple,
+                isSmallScreen,
               ),
             ],
           ),
@@ -341,47 +456,69 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildInventoryReport() {
+  Widget _buildInventoryReport(bool isSmallScreen) {
     if (_inventoryReport == null) {
-      return const Center(
-        child: Text('No inventory data available'),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.inventory,
+              size: isSmallScreen ? 40 : 50,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'No inventory data available',
+              style: TextStyle(
+                fontSize: isSmallScreen ? 14 : 16,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
       );
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
       child: Column(
         children: [
           GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
+            crossAxisSpacing: isSmallScreen ? 8 : 10,
+            mainAxisSpacing: isSmallScreen ? 8 : 10,
+            childAspectRatio: isSmallScreen ? 1.3 : 1.4,
             children: [
               _buildSummaryCard(
                 'Total Products',
                 (_inventoryReport!['total_products'] ?? 0).toString(),
                 Icons.inventory,
                 Colors.blue,
+                isSmallScreen,
               ),
               _buildSummaryCard(
                 'Low Stock',
                 (_inventoryReport!['low_stock_count'] ?? 0).toString(),
                 Icons.warning,
                 Colors.orange,
+                isSmallScreen,
               ),
               _buildSummaryCard(
                 'Out of Stock',
                 (_inventoryReport!['out_of_stock_count'] ?? 0).toString(),
                 Icons.block,
                 Colors.red,
+                isSmallScreen,
               ),
               _buildSummaryCard(
                 'Inventory Value',
-                _formatCurrency(_inventoryReport!['total_inventory_value'] ?? 0),
+                _formatCurrency((_inventoryReport!['total_inventory_value'] as num?)?.toDouble() ?? 0),
                 Icons.attach_money,
                 Colors.green,
+                isSmallScreen,
               ),
             ],
           ),
@@ -390,42 +527,110 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildTopProducts() {
+  Widget _buildTopProducts(bool isSmallScreen) {
     if (_topProducts == null || _topProducts!.isEmpty) {
-      return const Center(
-        child: Text('No sales data yet'),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.star_border,
+              size: isSmallScreen ? 40 : 50,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'No sales data yet',
+              style: TextStyle(
+                fontSize: isSmallScreen ? 14 : 16,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
       );
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
       itemCount: _topProducts!.length,
       itemBuilder: (context, index) {
         final product = _topProducts![index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Colors.blue.shade50,
-              child: Text('${index + 1}'),
+        return TweenAnimationBuilder(
+          duration: Duration(milliseconds: 300 + (index * 50)),
+          tween: Tween<double>(begin: 0, end: 1),
+          curve: Curves.easeOut,
+          builder: (context, double value, child) {
+            return Transform.translate(
+              offset: Offset(0, 20 * (1 - value)),
+              child: Opacity(
+                opacity: value,
+                child: child,
+              ),
+            );
+          },
+          child: Card(
+            margin: EdgeInsets.only(bottom: isSmallScreen ? 6 : 8),
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 10),
             ),
-            title: Text(
-              product['product_name']?.toString() ?? 'Unknown',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text('Quantity sold: ${product['quantity'] ?? 0}'),
-            trailing: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  _formatCurrency((product['total'] as num?)?.toDouble() ?? 0),
-                  style: const TextStyle(
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Colors.blue.shade50,
+                radius: isSmallScreen ? 16 : 18,
+                child: Text(
+                  '${index + 1}',
+                  style: TextStyle(
+                    fontSize: isSmallScreen ? 11 : 12,
                     fontWeight: FontWeight.bold,
-                    color: Colors.green,
+                    color: Colors.blue.shade700,
                   ),
                 ),
-              ],
+              ),
+              title: Text(
+                product['product_name']?.toString() ?? 'Unknown',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: isSmallScreen ? 13 : 14,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              subtitle: Text(
+                'Quantity sold: ${product['quantity'] ?? 0}',
+                style: TextStyle(
+                  fontSize: isSmallScreen ? 11 : 12,
+                ),
+              ),
+              trailing: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 6 : 8,
+                  vertical: isSmallScreen ? 2 : 4,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(isSmallScreen ? 6 : 8),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      _formatCurrency((product['total'] as num?)?.toDouble() ?? 0),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                        fontSize: isSmallScreen ? 12 : 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: isSmallScreen ? 8 : 12,
+                vertical: isSmallScreen ? 4 : 8,
+              ),
             ),
           ),
         );
@@ -433,38 +638,56 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildSummaryCard(String title, String value, IconData icon, Color color) {
+  Widget _buildSummaryCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+    bool isSmallScreen,
+  ) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 10),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
               decoration: BoxDecoration(
                 color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(isSmallScreen ? 6 : 8),
               ),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+              child: Icon(
+                icon,
+                color: color,
+                size: isSmallScreen ? 16 : 18,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
+            Flexible(
+              child: Text(
+                value,
+                style: TextStyle(
+                  fontSize: isSmallScreen ? 16 : 18,
+                  fontWeight: FontWeight.bold,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ),
+            const SizedBox(height: 2),
             Text(
               title,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: isSmallScreen ? 9 : 10,
                 color: Colors.grey[600],
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

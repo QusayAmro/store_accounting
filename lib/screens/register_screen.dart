@@ -139,24 +139,26 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
             ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Account created successfully for ${_fullNameController.text}',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade700),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Please sign in to continue',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppTheme.primaryColor,
-                fontWeight: FontWeight.w600,
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Account created successfully for ${_fullNameController.text}',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey.shade700),
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                'Please sign in to continue',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppTheme.primaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           Center(
@@ -186,9 +188,15 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.error_outline, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(child: Text(message)),
+            Icon(Icons.error_outline, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 2,
+              ),
+            ),
           ],
         ),
         backgroundColor: Colors.red,
@@ -202,26 +210,46 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final isSmallScreen = mediaQuery.size.width < 360;
+    final isMediumScreen = mediaQuery.size.width < 600;
+    final keyboardOpen = mediaQuery.viewInsets.bottom > 0;
+    final padding = mediaQuery.padding;
+
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            size: isSmallScreen ? 18 : 20,
+          ),
           onPressed: () => Navigator.pop(context),
+          padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
         ),
-        title: const Text('Create Account'),
+        title: Text(
+          'Create Account',
+          style: TextStyle(
+            fontSize: isSmallScreen ? 16 : 18,
+          ),
+        ),
         centerTitle: true,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Column(
-                children: [
-                  // Header illustration
+          padding: EdgeInsets.only(
+            left: isSmallScreen ? 16 : 24,
+            right: isSmallScreen ? 16 : 24,
+            top: isSmallScreen ? 12 : 16,
+            bottom: keyboardOpen ? 20 : padding.bottom + 20,
+          ),
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Column(
+              children: [
+                // Header illustration - hide when keyboard is open on very small screens
+                if (!(isSmallScreen && keyboardOpen))
                   TweenAnimationBuilder(
                     duration: const Duration(milliseconds: 800),
                     tween: Tween<double>(begin: 0, end: 1),
@@ -230,8 +258,8 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                       return Transform.scale(
                         scale: value,
                         child: Container(
-                          width: 100,
-                          height: 100,
+                          width: isSmallScreen ? 70 : 80,
+                          height: isSmallScreen ? 70 : 80,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
@@ -241,349 +269,491 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                             ),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.storefront,
                             color: Colors.white,
-                            size: 50,
+                            size: isSmallScreen ? 30 : 35,
                           ),
                         ),
                       );
                     },
                   ),
-                  const SizedBox(height: 24),
-                  
-                  // Welcome text
-                  Text(
-                    'Start Your Journey',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade800,
-                    ),
+                
+                if (!(isSmallScreen && keyboardOpen))
+                  SizedBox(height: isSmallScreen ? 12 : 16),
+                
+                // Welcome text
+                Text(
+                  'Start Your Journey',
+                  style: TextStyle(
+                    fontSize: isSmallScreen ? 18 : 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade800,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Create an account to manage your store',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Create an account to manage your store',
+                  style: TextStyle(
+                    fontSize: isSmallScreen ? 11 : 12,
+                    color: Colors.grey.shade600,
                   ),
-                  const SizedBox(height: 32),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: isSmallScreen ? 16 : 24),
 
-                  // Form
-                  Form(
-                    key: _formKey,
-                    child: Column(
-                      children: [
-                        // Full Name
-                        _buildAnimatedField(
-                          index: 0,
+                // Form
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      // Full Name
+                      _buildAnimatedField(
+                        index: 0,
+                        isSmallScreen: isSmallScreen,
+                        child: TextFormField(
+                          controller: _fullNameController,
+                          textInputAction: TextInputAction.next,
+                          decoration: InputDecoration(
+                            labelText: 'Full Name',
+                            hintText: 'Enter your full name',
+                            labelStyle: TextStyle(
+                              fontSize: isSmallScreen ? 11 : 12,
+                            ),
+                            hintStyle: TextStyle(
+                              fontSize: isSmallScreen ? 11 : 12,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.person_outline,
+                              color: AppTheme.primaryColor,
+                              size: isSmallScreen ? 16 : 18,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: isSmallScreen ? 10 : 12,
+                              vertical: isSmallScreen ? 10 : 12,
+                            ),
+                            isDense: true,
+                          ),
+                          style: TextStyle(
+                            fontSize: isSmallScreen ? 12 : 13,
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Required';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      SizedBox(height: isSmallScreen ? 8 : 10),
+
+                      // Store Name
+                      _buildAnimatedField(
+                        index: 1,
+                        isSmallScreen: isSmallScreen,
+                        child: TextFormField(
+                          controller: _storeNameController,
+                          textInputAction: TextInputAction.next,
+                          decoration: InputDecoration(
+                            labelText: 'Store Name',
+                            hintText: 'Enter your store name',
+                            labelStyle: TextStyle(
+                              fontSize: isSmallScreen ? 11 : 12,
+                            ),
+                            hintStyle: TextStyle(
+                              fontSize: isSmallScreen ? 11 : 12,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.store_outlined,
+                              color: AppTheme.primaryColor,
+                              size: isSmallScreen ? 16 : 18,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: isSmallScreen ? 10 : 12,
+                              vertical: isSmallScreen ? 10 : 12,
+                            ),
+                            isDense: true,
+                          ),
+                          style: TextStyle(
+                            fontSize: isSmallScreen ? 12 : 13,
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Required';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      SizedBox(height: isSmallScreen ? 8 : 10),
+
+                      // Email
+                      _buildAnimatedField(
+                        index: 2,
+                        isSmallScreen: isSmallScreen,
+                        child: TextFormField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          decoration: InputDecoration(
+                            labelText: 'Email',
+                            hintText: 'Enter your email',
+                            labelStyle: TextStyle(
+                              fontSize: isSmallScreen ? 11 : 12,
+                            ),
+                            hintStyle: TextStyle(
+                              fontSize: isSmallScreen ? 11 : 12,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.email_outlined,
+                              color: AppTheme.primaryColor,
+                              size: isSmallScreen ? 16 : 18,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: isSmallScreen ? 10 : 12,
+                              vertical: isSmallScreen ? 10 : 12,
+                            ),
+                            isDense: true,
+                          ),
+                          style: TextStyle(
+                            fontSize: isSmallScreen ? 12 : 13,
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Required';
+                            }
+                            if (!value.contains('@') || !value.contains('.')) {
+                              return 'Invalid email';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      SizedBox(height: isSmallScreen ? 8 : 10),
+
+                      // Secret Code
+                      _buildAnimatedField(
+                        index: 3,
+                        isSmallScreen: isSmallScreen,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            gradient: LinearGradient(
+                              colors: [
+                                AppTheme.primaryColor.withOpacity(0.05),
+                                AppTheme.secondaryColor.withOpacity(0.05),
+                              ],
+                            ),
+                          ),
                           child: TextFormField(
-                            controller: _fullNameController,
+                            controller: _secretCodeController,
+                            obscureText: _obscureSecretCode,
+                            textInputAction: TextInputAction.next,
                             decoration: InputDecoration(
-                              labelText: 'Full Name',
-                              hintText: 'Enter your full name',
-                              prefixIcon: Icon(Icons.person_outline, color: AppTheme.primaryColor),
+                              labelText: 'Secret Code',
+                              hintText: 'Enter registration code',
+                              labelStyle: TextStyle(
+                                fontSize: isSmallScreen ? 11 : 12,
+                              ),
+                              hintStyle: TextStyle(
+                                fontSize: isSmallScreen ? 11 : 12,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.lock_outline,
+                                color: AppTheme.primaryColor,
+                                size: isSmallScreen ? 16 : 18,
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscureSecretCode ? Icons.visibility_off : Icons.visibility,
+                                  color: Colors.grey.shade600,
+                                  size: isSmallScreen ? 16 : 18,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscureSecretCode = !_obscureSecretCode;
+                                  });
+                                },
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                              ),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(12),
                               ),
                               filled: true,
                               fillColor: Colors.white,
+                              helperText: 'Required for registration',
+                              helperStyle: TextStyle(
+                                color: AppTheme.primaryColor,
+                                fontSize: isSmallScreen ? 9 : 10,
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: isSmallScreen ? 10 : 12,
+                                vertical: isSmallScreen ? 10 : 12,
+                              ),
+                              isDense: true,
+                            ),
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 12 : 13,
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Please enter your full name';
+                                return 'Required';
                               }
                               return null;
                             },
                           ),
                         ),
-                        const SizedBox(height: 16),
+                      ),
+                      SizedBox(height: isSmallScreen ? 8 : 10),
 
-                        // Store Name
-                        _buildAnimatedField(
-                          index: 1,
-                          child: TextFormField(
-                            controller: _storeNameController,
-                            decoration: InputDecoration(
-                              labelText: 'Store Name',
-                              hintText: 'Enter your store name',
-                              prefixIcon: Icon(Icons.store_outlined, color: AppTheme.primaryColor),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              filled: true,
-                              fillColor: Colors.white,
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your store name';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Email
-                        _buildAnimatedField(
-                          index: 2,
-                          child: TextFormField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            decoration: InputDecoration(
-                              labelText: 'Email',
-                              hintText: 'Enter your email',
-                              prefixIcon: Icon(Icons.email_outlined, color: AppTheme.primaryColor),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              filled: true,
-                              fillColor: Colors.white,
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your email';
-                              }
-                              if (!value.contains('@') || !value.contains('.')) {
-                                return 'Please enter a valid email';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Secret Code
-                        _buildAnimatedField(
-                          index: 3,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppTheme.primaryColor.withOpacity(0.05),
-                                  AppTheme.secondaryColor.withOpacity(0.05),
-                                ],
-                              ),
-                            ),
-                            child: TextFormField(
-                              controller: _secretCodeController,
-                              obscureText: _obscureSecretCode,
+                      // Password with strength indicator
+                      _buildAnimatedField(
+                        index: 4,
+                        isSmallScreen: isSmallScreen,
+                        child: Column(
+                          children: [
+                            TextFormField(
+                              controller: _passwordController,
+                              obscureText: _obscurePassword,
+                              textInputAction: TextInputAction.next,
                               decoration: InputDecoration(
-                                labelText: 'Secret Code',
-                                hintText: 'Enter registration code',
-                                prefixIcon: Icon(Icons.lock_outline, color: AppTheme.primaryColor),
+                                labelText: 'Password',
+                                hintText: 'Create a password',
+                                labelStyle: TextStyle(
+                                  fontSize: isSmallScreen ? 11 : 12,
+                                ),
+                                hintStyle: TextStyle(
+                                  fontSize: isSmallScreen ? 11 : 12,
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.lock_outline,
+                                  color: AppTheme.primaryColor,
+                                  size: isSmallScreen ? 16 : 18,
+                                ),
                                 suffixIcon: IconButton(
                                   icon: Icon(
-                                    _obscureSecretCode ? Icons.visibility_off : Icons.visibility,
+                                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
                                     color: Colors.grey.shade600,
+                                    size: isSmallScreen ? 16 : 18,
                                   ),
                                   onPressed: () {
                                     setState(() {
-                                      _obscureSecretCode = !_obscureSecretCode;
+                                      _obscurePassword = !_obscurePassword;
                                     });
                                   },
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
                                 ),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                                 filled: true,
                                 fillColor: Colors.white,
-                                helperText: 'Required for registration',
-                                helperStyle: TextStyle(color: AppTheme.primaryColor),
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: isSmallScreen ? 10 : 12,
+                                  vertical: isSmallScreen ? 10 : 12,
+                                ),
+                                isDense: true,
+                              ),
+                              style: TextStyle(
+                                fontSize: isSmallScreen ? 12 : 13,
                               ),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
-                                  return 'Please enter the secret code';
+                                  return 'Required';
+                                }
+                                if (value.length < 6) {
+                                  return 'Min 6 chars';
                                 }
                                 return null;
                               },
                             ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Password with strength indicator
-                        _buildAnimatedField(
-                          index: 4,
-                          child: Column(
-                            children: [
-                              TextFormField(
-                                controller: _passwordController,
-                                obscureText: _obscurePassword,
-                                decoration: InputDecoration(
-                                  labelText: 'Password',
-                                  hintText: 'Create a password',
-                                  prefixIcon: Icon(Icons.lock_outline, color: AppTheme.primaryColor),
-                                  suffixIcon: IconButton(
-                                    icon: Icon(
-                                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                                      color: Colors.grey.shade600,
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        _obscurePassword = !_obscurePassword;
-                                      });
-                                    },
-                                  ),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter a password';
-                                  }
-                                  if (value.length < 6) {
-                                    return 'Password must be at least 6 characters';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              const SizedBox(height: 12),
-                              
-                              // Password strength indicators
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: [
-                                  _buildStrengthChip('6+ chars', _hasMinLength),
-                                  _buildStrengthChip('Uppercase', _hasUpperCase),
-                                  _buildStrengthChip('Lowercase', _hasLowerCase),
-                                  _buildStrengthChip('Number', _hasNumber),
-                                  _buildStrengthChip('Special', _hasSpecialChar),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Confirm Password
-                        _buildAnimatedField(
-                          index: 5,
-                          child: TextFormField(
-                            controller: _confirmPasswordController,
-                            obscureText: _obscureConfirmPassword,
-                            decoration: InputDecoration(
-                              labelText: 'Confirm Password',
-                              hintText: 'Re-enter your password',
-                              prefixIcon: Icon(Icons.lock_outline, color: AppTheme.primaryColor),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
-                                  color: Colors.grey.shade600,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _obscureConfirmPassword = !_obscureConfirmPassword;
-                                  });
-                                },
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              filled: true,
-                              fillColor: Colors.white,
+                            const SizedBox(height: 8),
+                            
+                            // Password strength indicators
+                            Wrap(
+                              spacing: 4,
+                              runSpacing: 4,
+                              children: [
+                                _buildStrengthChip('6+ chars', _hasMinLength, isSmallScreen),
+                                _buildStrengthChip('Uppercase', _hasUpperCase, isSmallScreen),
+                                _buildStrengthChip('Lowercase', _hasLowerCase, isSmallScreen),
+                                _buildStrengthChip('Number', _hasNumber, isSmallScreen),
+                                _buildStrengthChip('Special', _hasSpecialChar, isSmallScreen),
+                              ],
                             ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please confirm your password';
-                              }
-                              if (value != _passwordController.text) {
-                                return 'Passwords do not match';
-                              }
-                              return null;
-                            },
-                          ),
+                          ],
                         ),
-                        const SizedBox(height: 32),
+                      ),
+                      SizedBox(height: isSmallScreen ? 8 : 10),
 
-                        // Register button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 55,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _signUp,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryColor,
-                              foregroundColor: Colors.white,
-                              elevation: 3,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
+                      // Confirm Password
+                      _buildAnimatedField(
+                        index: 5,
+                        isSmallScreen: isSmallScreen,
+                        child: TextFormField(
+                          controller: _confirmPasswordController,
+                          obscureText: _obscureConfirmPassword,
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) => _signUp(),
+                          decoration: InputDecoration(
+                            labelText: 'Confirm Password',
+                            hintText: 'Re-enter your password',
+                            labelStyle: TextStyle(
+                              fontSize: isSmallScreen ? 11 : 12,
                             ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.person_add),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        'Create Account',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                            hintStyle: TextStyle(
+                              fontSize: isSmallScreen ? 11 : 12,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.lock_outline,
+                              color: AppTheme.primaryColor,
+                              size: isSmallScreen ? 16 : 18,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                                color: Colors.grey.shade600,
+                                size: isSmallScreen ? 16 : 18,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscureConfirmPassword = !_obscureConfirmPassword;
+                                });
+                              },
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: isSmallScreen ? 10 : 12,
+                              vertical: isSmallScreen ? 10 : 12,
+                            ),
+                            isDense: true,
                           ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Terms and conditions
-                        Text(
-                          'By creating an account, you agree to our',
                           style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
+                            fontSize: isSmallScreen ? 12 : 13,
                           ),
-                          textAlign: TextAlign.center,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Required';
+                            }
+                            if (value != _passwordController.text) {
+                              return 'Passwords don\'t match';
+                            }
+                            return null;
+                          },
                         ),
-                        const SizedBox(height: 4),
-                        RichText(
-                          text: TextSpan(
+                      ),
+                      SizedBox(height: isSmallScreen ? 20 : 24),
+
+                      // Register button
+                      SizedBox(
+                        width: double.infinity,
+                        height: isSmallScreen ? 44 : 48,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _signUp,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            foregroundColor: Colors.white,
+                            elevation: 3,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.person_add,
+                                      size: isSmallScreen ? 16 : 18,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'Create Account',
+                                      style: TextStyle(
+                                        fontSize: isSmallScreen ? 13 : 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      ),
+                      SizedBox(height: isSmallScreen ? 12 : 16),
+
+                      // Terms and conditions
+                      Text(
+                        'By creating an account, you agree to our',
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 9 : 10,
+                          color: Colors.grey.shade600,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 2),
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        children: [
+                          Text(
+                            'Terms of Service',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: isSmallScreen ? 9 : 10,
+                              color: AppTheme.primaryColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            ' and ',
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 9 : 10,
                               color: Colors.grey.shade600,
                             ),
-                            children: [
-                              TextSpan(
-                                text: 'Terms of Service',
-                                style: TextStyle(
-                                  color: AppTheme.primaryColor,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const TextSpan(text: ' and '),
-                              TextSpan(
-                                text: 'Privacy Policy',
-                                style: TextStyle(
-                                  color: AppTheme.primaryColor,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
                           ),
-                        ),
-                      ],
-                    ),
+                          Text(
+                            'Privacy Policy',
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 9 : 10,
+                              color: AppTheme.primaryColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -591,14 +761,18 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
     );
   }
 
-  Widget _buildAnimatedField({required int index, required Widget child}) {
+  Widget _buildAnimatedField({
+    required int index,
+    required bool isSmallScreen,
+    required Widget child,
+  }) {
     return TweenAnimationBuilder(
       duration: Duration(milliseconds: 300 + (index * 100)),
       tween: Tween<double>(begin: 0, end: 1),
       curve: Curves.easeOut,
       builder: (context, double value, child) {
         return Transform.translate(
-          offset: Offset(0, 20 * (1 - value)),
+          offset: Offset(0, 15 * (1 - value)),
           child: Opacity(
             opacity: value,
             child: child,
@@ -609,12 +783,15 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
     );
   }
 
-  Widget _buildStrengthChip(String label, bool isMet) {
+  Widget _buildStrengthChip(String label, bool isMet, bool isSmallScreen) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmallScreen ? 4 : 6,
+        vertical: isSmallScreen ? 2 : 3,
+      ),
       decoration: BoxDecoration(
         color: isMet ? Colors.green.shade50 : Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isMet ? Colors.green.shade200 : Colors.grey.shade300,
         ),
@@ -624,14 +801,14 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
         children: [
           Icon(
             isMet ? Icons.check_circle : Icons.circle_outlined,
-            size: 12,
+            size: isSmallScreen ? 8 : 10,
             color: isMet ? Colors.green : Colors.grey.shade500,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 2),
           Text(
             label,
             style: TextStyle(
-              fontSize: 10,
+              fontSize: isSmallScreen ? 7 : 8,
               color: isMet ? Colors.green.shade700 : Colors.grey.shade600,
               fontWeight: isMet ? FontWeight.bold : FontWeight.normal,
             ),

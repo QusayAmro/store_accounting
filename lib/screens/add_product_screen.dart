@@ -206,6 +206,10 @@ class _AddProductScreenState extends State<AddProductScreen> with TickerProvider
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final isSmallScreen = mediaQuery.size.width < 360;
+    final padding = mediaQuery.padding;
+
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
@@ -220,138 +224,121 @@ class _AddProductScreenState extends State<AddProductScreen> with TickerProvider
             ),
         ],
       ),
-      body: Stack(
-        children: [
-          // Background decoration
-          Positioned(
-            top: -100,
-            right: -100,
-            child: Container(
-              width: 200,
-              height: 200,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.primaryColor.withOpacity(0.05),
+      body: SafeArea( // Added SafeArea to handle notches and system bars
+        child: Stack(
+          children: [
+            // Background decoration
+            Positioned(
+              top: -100,
+              right: -100,
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppTheme.primaryColor.withOpacity(0.05),
+                ),
               ),
             ),
-          ),
-          
-          // Main content
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: TweenAnimationBuilder(
-              duration: const Duration(milliseconds: 500),
-              tween: Tween<double>(begin: 0, end: 1),
-              curve: Curves.easeOut,
-              builder: (context, double value, child) {
-                return Transform.translate(
-                  offset: Offset(0, 20 * (1 - value)),
-                  child: Opacity(
-                    opacity: value,
-                    child: child,
-                  ),
-                );
-              },
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    // Product icon/header
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppTheme.primaryColor.withOpacity(0.1),
-                            AppTheme.secondaryColor.withOpacity(0.05),
+            
+            // Main content
+            SingleChildScrollView(
+              padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+              child: TweenAnimationBuilder(
+                duration: const Duration(milliseconds: 500),
+                tween: Tween<double>(begin: 0, end: 1),
+                curve: Curves.easeOut,
+                builder: (context, double value, child) {
+                  return Transform.translate(
+                    offset: Offset(0, 20 * (1 - value)),
+                    child: Opacity(
+                      opacity: value,
+                      child: child,
+                    ),
+                  );
+                },
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start, // Added for better alignment
+                    children: [
+                      // Product icon/header
+                      Container(
+                        width: double.infinity, // Ensure full width
+                        padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppTheme.primaryColor.withOpacity(0.1),
+                              AppTheme.secondaryColor.withOpacity(0.05),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.primaryColor.withOpacity(0.2),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                _isEditing ? Icons.edit : Icons.add_business,
+                                size: isSmallScreen ? 24 : 30,
+                                color: AppTheme.primaryColor,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _isEditing ? 'Edit Product' : 'New Product',
+                                    style: TextStyle(
+                                      fontSize: isSmallScreen ? 16 : 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppTheme.primaryColor,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _isEditing 
+                                        ? 'Update product information below'
+                                        : 'Fill in the details to add a new product',
+                                    style: TextStyle(
+                                      fontSize: isSmallScreen ? 11 : 12,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
-                        borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppTheme.primaryColor.withOpacity(0.2),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              _isEditing ? Icons.edit : Icons.add_business,
-                              size: 30,
-                              color: AppTheme.primaryColor,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _isEditing ? 'Edit Product' : 'New Product',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppTheme.primaryColor,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  _isEditing 
-                                      ? 'Update product information below'
-                                      : 'Fill in the details to add a new product',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 16),
 
-                    // Barcode section with scan button
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: TextFormField(
+                      // Barcode section with scan button
+                      _buildInputField(
                         controller: _barcodeController,
-                        focusNode: _barcodeFocusNode,
-                        decoration: InputDecoration(
-                          labelText: 'Barcode',
-                          hintText: 'Enter product barcode',
-                          prefixIcon: Icon(Icons.qr_code_scanner, color: AppTheme.primaryColor),
-                          suffixIcon: IconButton(
-                            icon: Icon(Icons.camera_alt, color: AppTheme.primaryColor),
-                            onPressed: _showBarcodeScanner,
-                            tooltip: 'Scan barcode',
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide.none,
-                          ),
-                          filled: true,
-                          fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        label: 'Barcode',
+                        icon: Icons.qr_code_scanner,
+                        hint: 'Enter product barcode',
+                        suffixIcon: IconButton(
+                          icon: Icon(Icons.camera_alt, color: AppTheme.primaryColor),
+                          onPressed: _showBarcodeScanner,
+                          tooltip: 'Scan barcode',
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -360,324 +347,362 @@ class _AddProductScreenState extends State<AddProductScreen> with TickerProvider
                           return null;
                         },
                       ),
-                    ),
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 12),
 
-                    // Product name
-                    _buildInputField(
-                      controller: _nameController,
-                      label: 'Product Name',
-                      icon: Icons.shopping_bag,
-                      hint: 'Enter product name',
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter product name';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Description
-                    _buildInputField(
-                      controller: _descriptionController,
-                      label: 'Description',
-                      icon: Icons.description,
-                      hint: 'Enter product description (optional)',
-                      maxLines: 3,
-                      validator: null,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Category selection
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                      // Product name
+                      _buildInputField(
+                        controller: _nameController,
+                        label: 'Product Name',
+                        icon: Icons.shopping_bag,
+                        hint: 'Enter product name',
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter product name';
+                          }
+                          return null;
+                        },
                       ),
-                      child: Column(
-                        children: [
-                          if (!_isCustomCategory)
-                            DropdownButtonFormField<String>(
-                              value: _categoryController.text.isNotEmpty
-                                  ? _categoryController.text
-                                  : null,
-                              decoration: InputDecoration(
-                                labelText: 'Category',
-                                hintText: 'Select a category',
-                                prefixIcon: Icon(Icons.category, color: AppTheme.primaryColor),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: BorderSide.none,
-                                ),
-                                filled: true,
-                                fillColor: Colors.white,
-                              ),
-                              items: _categories.map((category) {
-                                return DropdownMenuItem(
-                                  value: category,
-                                  child: Text(category),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  _categoryController.text = value ?? '';
-                                });
-                              },
-                              validator: (value) {
-                                if (!_isCustomCategory && (value == null || value.isEmpty)) {
-                                  return 'Please select a category';
-                                }
-                                return null;
-                              },
+                      const SizedBox(height: 12),
+
+                      // Description
+                      _buildInputField(
+                        controller: _descriptionController,
+                        label: 'Description',
+                        icon: Icons.description,
+                        hint: 'Enter product description (optional)',
+                        maxLines: 3,
+                        validator: null,
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Category selection
+                      Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
                             ),
-                          
-                          if (_isCustomCategory)
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Padding(
                               padding: const EdgeInsets.all(16),
-                              child: TextFormField(
-                                controller: _customCategoryController,
-                                decoration: InputDecoration(
-                                  labelText: 'Custom Category',
-                                  hintText: 'Enter category name',
-                                  prefixIcon: Icon(Icons.create, color: AppTheme.secondaryColor),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                validator: (value) {
-                                  if (_isCustomCategory && (value == null || value.isEmpty)) {
-                                    return 'Please enter category name';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ),
-                          
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                TextButton.icon(
-                                  onPressed: () {
-                                    setState(() {
-                                      _isCustomCategory = !_isCustomCategory;
-                                      if (!_isCustomCategory) {
-                                        _customCategoryController.clear();
-                                      }
-                                    });
-                                  },
-                                  icon: Icon(
-                                    _isCustomCategory ? Icons.list : Icons.add,
-                                    size: 16,
-                                  ),
-                                  label: Text(
-                                    _isCustomCategory ? 'Choose from list' : 'Add custom category',
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Price section
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.attach_money, color: AppTheme.successColor),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Pricing',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.successColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildPriceField(
-                                  controller: _purchasePriceController,
-                                  label: 'Purchase Price',
-                                  hint: 'Cost price',
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _buildPriceField(
-                                  controller: _sellingPriceController,
-                                  label: 'Selling Price',
-                                  hint: 'Retail price',
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          if (_purchasePriceController.text.isNotEmpty && 
-                              _sellingPriceController.text.isNotEmpty) ...[
-                            const Divider(),
-                            const SizedBox(height: 8),
-                            _buildProfitPreview(),
-                          ],
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Stock section
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.inventory, color: AppTheme.warningColor),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Stock Management',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.warningColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildStockField(
-                                  controller: _quantityController,
-                                  label: 'Initial Quantity',
-                                  icon: Icons.numbers,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _buildStockField(
-                                  controller: _thresholdController,
-                                  label: 'Low Stock Alert',
-                                  icon: Icons.warning,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppTheme.warningColor.withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.info_outline, size: 16, color: AppTheme.warningColor),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    'You will be notified when stock falls below the alert threshold',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey.shade700,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Save button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 55,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _saveProduct,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
-                          foregroundColor: Colors.white,
-                          elevation: 3,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                              child: Row(
                                 children: [
-                                  Icon(_isEditing ? Icons.update : Icons.add),
+                                  Icon(Icons.category, color: AppTheme.primaryColor, size: 20),
                                   const SizedBox(width: 8),
                                   Text(
-                                    _isEditing ? 'Update Product' : 'Add Product',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
+                                    'Category',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.grey.shade700,
                                     ),
                                   ),
                                 ],
                               ),
+                            ),
+                            
+                            if (!_isCustomCategory)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: DropdownButtonFormField<String>(
+                                  value: _categoryController.text.isNotEmpty
+                                      ? _categoryController.text
+                                      : null,
+                                  decoration: const InputDecoration(
+                                    hintText: 'Select a category',
+                                    border: OutlineInputBorder(),
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  ),
+                                  items: _categories.map((category) {
+                                    return DropdownMenuItem(
+                                      value: category,
+                                      child: Text(
+                                        category,
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
+                                    );
+                                  }).toList(),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _categoryController.text = value ?? '';
+                                    });
+                                  },
+                                  validator: (value) {
+                                    if (!_isCustomCategory && (value == null || value.isEmpty)) {
+                                      return 'Please select a category';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ),
+                            
+                            if (_isCustomCategory)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: TextFormField(
+                                  controller: _customCategoryController,
+                                  decoration: const InputDecoration(
+                                    hintText: 'Enter category name',
+                                    border: OutlineInputBorder(),
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  ),
+                                  validator: (value) {
+                                    if (_isCustomCategory && (value == null || value.isEmpty)) {
+                                      return 'Please enter category name';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ),
+                            
+                            Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _isCustomCategory = !_isCustomCategory;
+                                        if (!_isCustomCategory) {
+                                          _customCategoryController.clear();
+                                        }
+                                      });
+                                    },
+                                    style: TextButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      minimumSize: Size.zero,
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          _isCustomCategory ? Icons.list : Icons.add,
+                                          size: 16,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          _isCustomCategory ? 'Choose from list' : 'Add custom',
+                                          style: const TextStyle(fontSize: 12),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 12),
+
+                      // Price section
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.attach_money, color: AppTheme.successColor, size: 20),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Pricing',
+                                  style: TextStyle(
+                                    fontSize: isSmallScreen ? 14 : 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.successColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: _buildPriceField(
+                                    controller: _purchasePriceController,
+                                    label: 'Purchase',
+                                    hint: 'Cost',
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _buildPriceField(
+                                    controller: _sellingPriceController,
+                                    label: 'Selling',
+                                    hint: 'Retail',
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            if (_purchasePriceController.text.isNotEmpty && 
+                                _sellingPriceController.text.isNotEmpty)
+                              _buildProfitPreview(isSmallScreen),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Stock section
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.inventory, color: AppTheme.warningColor, size: 20),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Stock Management',
+                                  style: TextStyle(
+                                    fontSize: isSmallScreen ? 14 : 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.warningColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: _buildStockField(
+                                    controller: _quantityController,
+                                    label: 'Quantity',
+                                    icon: Icons.numbers,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _buildStockField(
+                                    controller: _thresholdController,
+                                    label: 'Alert at',
+                                    icon: Icons.warning,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: AppTheme.warningColor.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.info_outline, size: 14, color: AppTheme.warningColor),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Get notified when stock falls below alert threshold',
+                                      style: TextStyle(
+                                        fontSize: isSmallScreen ? 10 : 11,
+                                        color: Colors.grey.shade700,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Save button
+                      SizedBox(
+                        width: double.infinity,
+                        height: isSmallScreen ? 48 : 55,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _saveProduct,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            foregroundColor: Colors.white,
+                            elevation: 3,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(_isEditing ? Icons.update : Icons.add, size: 18),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(
+                                        _isEditing ? 'Update Product' : 'Add Product',
+                                        style: TextStyle(
+                                          fontSize: isSmallScreen ? 14 : 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      ),
+                      
+                      // Add bottom padding for scrolling
+                      SizedBox(height: padding.bottom + 10),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -688,9 +713,13 @@ class _AddProductScreenState extends State<AddProductScreen> with TickerProvider
     required IconData icon,
     String? hint,
     int maxLines = 1,
+    Widget? suffixIcon,
     String? Function(String?)? validator,
   }) {
+    final isSmallScreen = MediaQuery.of(context).size.width < 360;
+    
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -708,14 +737,20 @@ class _AddProductScreenState extends State<AddProductScreen> with TickerProvider
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
-          prefixIcon: Icon(icon, color: AppTheme.primaryColor),
+          labelStyle: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+          hintStyle: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+          prefixIcon: Icon(icon, color: AppTheme.primaryColor, size: isSmallScreen ? 18 : 24),
+          suffixIcon: suffixIcon,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
           ),
           filled: true,
           fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: isSmallScreen ? 12 : 16,
+            vertical: isSmallScreen ? 12 : 16,
+          ),
         ),
         validator: validator,
       ),
@@ -727,24 +762,30 @@ class _AddProductScreenState extends State<AddProductScreen> with TickerProvider
     required String label,
     required String hint,
   }) {
+    final isSmallScreen = MediaQuery.of(context).size.width < 360;
+    
     return TextFormField(
       controller: controller,
       keyboardType: TextInputType.number,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        prefixIcon: Icon(Icons.attach_money, size: 18, color: AppTheme.successColor),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+        labelStyle: TextStyle(fontSize: isSmallScreen ? 11 : 13),
+        hintStyle: TextStyle(fontSize: isSmallScreen ? 11 : 13),
+        prefixIcon: Icon(Icons.attach_money, size: isSmallScreen ? 14 : 18, color: AppTheme.successColor),
+        border: const OutlineInputBorder(),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: isSmallScreen ? 8 : 12,
+          vertical: isSmallScreen ? 8 : 12,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        isDense: true, // Makes the field more compact
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return 'Required';
+          return 'Req';
         }
         if (double.tryParse(value) == null) {
-          return 'Invalid number';
+          return 'Invalid';
         }
         return null;
       },
@@ -756,30 +797,35 @@ class _AddProductScreenState extends State<AddProductScreen> with TickerProvider
     required String label,
     required IconData icon,
   }) {
+    final isSmallScreen = MediaQuery.of(context).size.width < 360;
+    
     return TextFormField(
       controller: controller,
       keyboardType: TextInputType.number,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, size: 18, color: AppTheme.warningColor),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+        labelStyle: TextStyle(fontSize: isSmallScreen ? 11 : 13),
+        prefixIcon: Icon(icon, size: isSmallScreen ? 14 : 18, color: AppTheme.warningColor),
+        border: const OutlineInputBorder(),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: isSmallScreen ? 8 : 12,
+          vertical: isSmallScreen ? 8 : 12,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        isDense: true,
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return 'Required';
+          return 'Req';
         }
         if (int.tryParse(value) == null) {
-          return 'Invalid number';
+          return 'Invalid';
         }
         return null;
       },
     );
   }
 
-  Widget _buildProfitPreview() {
+  Widget _buildProfitPreview(bool isSmallScreen) {
     final purchasePrice = double.tryParse(_purchasePriceController.text) ?? 0;
     final sellingPrice = double.tryParse(_sellingPriceController.text) ?? 0;
     final profit = sellingPrice - purchasePrice;
@@ -790,10 +836,10 @@ class _AddProductScreenState extends State<AddProductScreen> with TickerProvider
     else if (profit < 10) profitColor = Colors.orange;
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
       decoration: BoxDecoration(
         color: profitColor.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: profitColor.withOpacity(0.2)),
       ),
       child: Row(
@@ -801,37 +847,44 @@ class _AddProductScreenState extends State<AddProductScreen> with TickerProvider
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Profit Preview',
+                'Profit',
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: isSmallScreen ? 10 : 12,
                   color: Colors.grey.shade600,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                '${profit >= 0 ? '+' : '-'}₪${profit.abs().toStringAsFixed(2)}',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: profitColor,
+              const SizedBox(height: 2),
+              Flexible(
+                child: Text(
+                  '${profit >= 0 ? '+' : '-'}₪${profit.abs().toStringAsFixed(2)}',
+                  style: TextStyle(
+                    fontSize: isSmallScreen ? 14 : 18,
+                    fontWeight: FontWeight.bold,
+                    color: profitColor,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: EdgeInsets.symmetric(
+              horizontal: isSmallScreen ? 8 : 12,
+              vertical: isSmallScreen ? 4 : 6,
+            ),
             decoration: BoxDecoration(
               color: profitColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              '${margin.toStringAsFixed(1)}% margin',
+              '${margin.toStringAsFixed(1)}%',
               style: TextStyle(
                 color: profitColor,
                 fontWeight: FontWeight.bold,
-                fontSize: 12,
+                fontSize: isSmallScreen ? 10 : 12,
               ),
             ),
           ),
@@ -858,7 +911,6 @@ class _AddProductScreenState extends State<AddProductScreen> with TickerProvider
             onPressed: () {
               // Implement delete functionality
               Navigator.pop(context);
-              // Show delete confirmation
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Product deleted'),

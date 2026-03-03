@@ -142,9 +142,15 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.error_outline, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(child: Text(message)),
+            Icon(Icons.error_outline, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ),
           ],
         ),
         backgroundColor: AppTheme.errorColor,
@@ -162,65 +168,81 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final isSmallScreen = mediaQuery.size.width < 360;
+    final padding = mediaQuery.padding;
+
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('Sales History'),
+        title: Text(
+          'Sales History',
+          style: TextStyle(
+            fontSize: isSmallScreen ? 16 : 18,
+          ),
+        ),
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(Icons.refresh, size: isSmallScreen ? 18 : 20),
             onPressed: _loadSales,
             tooltip: 'Refresh',
+            padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
           ),
           IconButton(
-            icon: const Icon(Icons.filter_list),
+            icon: Icon(Icons.filter_list, size: isSmallScreen ? 18 : 20),
             onPressed: _showFilterOptions,
             tooltip: 'Filter',
+            padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
           ),
         ],
       ),
-      body: _isLoading
-          ? _buildLoadingState()
-          : Column(
-              children: [
-                _buildFilterBar(),
-                if (_selectedFilter == 'Custom') _buildCustomDateBar(),
-                if (_sales.isNotEmpty) _buildSummaryCard(),
-                Expanded(
-                  child: _sales.isEmpty
-                      ? _buildEmptyState()
-                      : _buildSalesList(),
-                ),
-              ],
-            ),
+      body: SafeArea(
+        child: _isLoading
+            ? _buildLoadingState(isSmallScreen)
+            : Column(
+                children: [
+                  _buildFilterBar(isSmallScreen),
+                  if (_selectedFilter == 'Custom') _buildCustomDateBar(isSmallScreen),
+                  if (_sales.isNotEmpty) _buildSummaryCard(isSmallScreen),
+                  Expanded(
+                    child: _sales.isEmpty
+                        ? _buildEmptyState(isSmallScreen)
+                        : _buildSalesList(isSmallScreen),
+                  ),
+                ],
+              ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.pushNamed(context, '/create-sale'),
-        icon: const Icon(Icons.add),
-        label: const Text('New Sale'),
+        icon: Icon(Icons.add, size: isSmallScreen ? 16 : 18),
+        label: Text(
+          'New Sale',
+          style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+        ),
         backgroundColor: AppTheme.accentColor,
       ),
     );
   }
 
-  Widget _buildLoadingState() {
+  Widget _buildLoadingState(bool isSmallScreen) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           SizedBox(
-            width: 60,
-            height: 60,
+            width: isSmallScreen ? 40 : 50,
+            height: isSmallScreen ? 40 : 50,
             child: CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
               strokeWidth: 3,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           Text(
             'Loading sales...',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: isSmallScreen ? 14 : 16,
               color: Colors.grey.shade600,
             ),
           ),
@@ -229,9 +251,9 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildFilterBar() {
+  Widget _buildFilterBar(bool isSmallScreen) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 8 : 12),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -246,14 +268,19 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
         children: [
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 12 : 16),
             child: Row(
               children: _filters.map((filter) {
                 final isSelected = filter == _selectedFilter;
                 return Padding(
-                  padding: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.only(right: 6),
                   child: FilterChip(
-                    label: Text(filter),
+                    label: Text(
+                      filter,
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 11 : 13,
+                      ),
+                    ),
                     selected: isSelected,
                     onSelected: (selected) async {
                       setState(() {
@@ -271,9 +298,14 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                     labelStyle: TextStyle(
                       color: isSelected ? Colors.white : Colors.grey.shade700,
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontSize: isSmallScreen ? 11 : 13,
                     ),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isSmallScreen ? 10 : 12,
+                      vertical: isSmallScreen ? 6 : 8,
+                    ),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     elevation: isSelected ? 2 : 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   ),
                 );
               }).toList(),
@@ -284,30 +316,37 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildCustomDateBar() {
+  Widget _buildCustomDateBar(bool isSmallScreen) {
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: EdgeInsets.all(isSmallScreen ? 10 : 12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [AppTheme.primaryColor.withOpacity(0.1), Colors.transparent],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: InkWell(
         onTap: _selectCustomDate,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: EdgeInsets.symmetric(
+            horizontal: isSmallScreen ? 12 : 16,
+            vertical: isSmallScreen ? 10 : 12,
+          ),
           decoration: BoxDecoration(
             border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
             children: [
-              Icon(Icons.calendar_today, size: 20, color: AppTheme.primaryColor),
-              const SizedBox(width: 12),
+              Icon(
+                Icons.calendar_today,
+                size: isSmallScreen ? 16 : 18,
+                color: AppTheme.primaryColor,
+              ),
+              const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -315,23 +354,28 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                     Text(
                       'Selected Date',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: isSmallScreen ? 9 : 10,
                         color: Colors.grey.shade600,
                       ),
                     ),
                     Text(
                       DateFormat('EEEE, MMMM d, yyyy').format(_selectedDate),
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: isSmallScreen ? 11 : 12,
                         fontWeight: FontWeight.w600,
                         color: AppTheme.primaryColor,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 8 : 10,
+                  vertical: isSmallScreen ? 4 : 6,
+                ),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -341,6 +385,7 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                   style: TextStyle(
                     color: AppTheme.primaryColor,
                     fontWeight: FontWeight.w600,
+                    fontSize: isSmallScreen ? 9 : 10,
                   ),
                 ),
               ),
@@ -351,13 +396,13 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildSummaryCard() {
+  Widget _buildSummaryCard(bool isSmallScreen) {
     final totalSales = _sales.fold(0.0, (sum, sale) => sum + sale.total);
     final totalProfit = _sales.fold(0.0, (sum, sale) => sum + sale.profit);
     final avgSale = _sales.isEmpty ? 0.0 : (totalSales / _sales.length).toDouble();
 
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: EdgeInsets.all(isSmallScreen ? 10 : 12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -367,7 +412,7 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
             AppTheme.secondaryColor,
           ],
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
         boxShadow: [
           BoxShadow(
             color: AppTheme.primaryColor.withOpacity(0.3),
@@ -379,10 +424,10 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => _showDetailedSummary(),
-          borderRadius: BorderRadius.circular(20),
+          onTap: () => _showDetailedSummary(isSmallScreen),
+          borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
             child: Column(
               children: [
                 Row(
@@ -391,29 +436,32 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                     Text(
                       'Summary',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: isSmallScreen ? 14 : 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.white.withOpacity(0.9),
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isSmallScreen ? 8 : 10,
+                        vertical: isSmallScreen ? 4 : 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        '$_selectedFilter',
-                        style: const TextStyle(
+                        _selectedFilter,
+                        style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
-                          fontSize: 12,
+                          fontSize: isSmallScreen ? 9 : 10,
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: isSmallScreen ? 12 : 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
@@ -422,27 +470,30 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                       _sales.length.toString(),
                       Icons.receipt,
                       Colors.white,
+                      isSmallScreen,
                     ),
                     _buildSummaryItem(
                       'Total Sales',
                       _formatCurrency(totalSales),
                       Icons.attach_money,
                       Colors.white,
+                      isSmallScreen,
                     ),
                     _buildSummaryItem(
                       'Profit',
                       _formatCurrency(totalProfit),
                       Icons.trending_up,
                       Colors.white,
+                      isSmallScreen,
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: isSmallScreen ? 10 : 12),
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -451,14 +502,15 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                         'Average Sale',
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.9),
+                          fontSize: isSmallScreen ? 10 : 11,
                         ),
                       ),
                       Text(
                         _formatCurrency(avgSale),
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                          fontSize: isSmallScreen ? 13 : 14,
                         ),
                       ),
                     ],
@@ -472,30 +524,36 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildSummaryItem(String label, String value, IconData icon, Color color) {
+  Widget _buildSummaryItem(String label, String value, IconData icon, Color color, bool isSmallScreen) {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(10),
+          padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
           decoration: BoxDecoration(
             color: color.withOpacity(0.2),
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, color: color, size: 20),
+          child: Icon(
+            icon,
+            color: color,
+            size: isSmallScreen ? 14 : 16,
+          ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         Text(
           value,
           style: TextStyle(
-            fontSize: 16,
+            fontSize: isSmallScreen ? 12 : 13,
             fontWeight: FontWeight.bold,
             color: color,
           ),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
         ),
         Text(
           label,
           style: TextStyle(
-            fontSize: 11,
+            fontSize: isSmallScreen ? 8 : 9,
             color: color.withOpacity(0.8),
           ),
         ),
@@ -503,73 +561,84 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(bool isSmallScreen) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          TweenAnimationBuilder(
-            duration: const Duration(milliseconds: 800),
-            tween: Tween<double>(begin: 0, end: 1),
-            curve: Curves.elasticOut,
-            builder: (context, double value, child) {
-              return Transform.scale(
-                scale: value,
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.1),
-                    shape: BoxShape.circle,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TweenAnimationBuilder(
+              duration: const Duration(milliseconds: 800),
+              tween: Tween<double>(begin: 0, end: 1),
+              curve: Curves.elasticOut,
+              builder: (context, double value, child) {
+                return Transform.scale(
+                  scale: value,
+                  child: Container(
+                    width: isSmallScreen ? 80 : 100,
+                    height: isSmallScreen ? 80 : 100,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.receipt_long,
+                      size: isSmallScreen ? 35 : 45,
+                      color: AppTheme.primaryColor.withOpacity(0.5),
+                    ),
                   ),
-                  child: Icon(
-                    Icons.receipt_long,
-                    size: 50,
-                    color: AppTheme.primaryColor.withOpacity(0.5),
-                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No sales found',
+              style: TextStyle(
+                fontSize: isSmallScreen ? 18 : 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade800,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Start by creating your first sale',
+              style: TextStyle(
+                fontSize: isSmallScreen ? 12 : 14,
+                color: Colors.grey.shade600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.pushNamed(context, '/create-sale'),
+              icon: Icon(Icons.add, size: isSmallScreen ? 14 : 16),
+              label: Text(
+                'Create New Sale',
+                style: TextStyle(fontSize: isSmallScreen ? 11 : 12),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.accentColor,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 20 : 24,
+                  vertical: isSmallScreen ? 10 : 12,
                 ),
-              );
-            },
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'No sales found',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade800,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Start by creating your first sale',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey.shade600,
-            ),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.pushNamed(context, '/create-sale'),
-            icon: const Icon(Icons.add),
-            label: const Text('Create New Sale'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.accentColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildSalesList() {
+  Widget _buildSalesList(bool isSmallScreen) {
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
       itemCount: _sales.length,
       itemBuilder: (context, index) {
         final sale = _sales[index];
@@ -579,52 +648,52 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
           curve: Curves.easeOut,
           builder: (context, double value, child) {
             return Transform.translate(
-              offset: Offset(0, 50 * (1 - value)),
+              offset: Offset(0, 30 * (1 - value)),
               child: Opacity(
                 opacity: value,
                 child: child,
               ),
             );
           },
-          child: _buildSaleCard(sale, index),
+          child: _buildSaleCard(sale, index, isSmallScreen),
         );
       },
     );
   }
 
-  Widget _buildSaleCard(Sale sale, int index) {
+  Widget _buildSaleCard(Sale sale, int index, bool isSmallScreen) {
     final paymentMethodColor = _getPaymentMethodColor(sale.paymentMethod);
     final profit = sale.profit;
     final profitPercentage = sale.total > 0 ? (profit / sale.total) * 100 : 0;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: isSmallScreen ? 6 : 8),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 18),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Material(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 18),
         child: InkWell(
-          onTap: () => _showSaleDetails(sale),
-          borderRadius: BorderRadius.circular(20),
+          onTap: () => _showSaleDetails(sale, isSmallScreen),
+          borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 18),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
             child: Column(
               children: [
                 Row(
                   children: [
                     // Invoice icon with gradient
                     Container(
-                      width: 60,
-                      height: 60,
+                      width: isSmallScreen ? 45 : 50,
+                      height: isSmallScreen ? 45 : 50,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
@@ -634,7 +703,7 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                             paymentMethodColor.withOpacity(0.05),
                           ],
                         ),
-                        borderRadius: BorderRadius.circular(15),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Center(
                         child: Column(
@@ -642,14 +711,14 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                           children: [
                             Icon(
                               Icons.receipt,
-                              size: 20,
+                              size: isSmallScreen ? 16 : 18,
                               color: paymentMethodColor,
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 2),
                             Text(
                               '#${sale.invoiceNumber.split('-').last}',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: isSmallScreen ? 8 : 9,
                                 fontWeight: FontWeight.bold,
                                 color: paymentMethodColor,
                               ),
@@ -658,7 +727,7 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 8),
 
                     // Sale details
                     Expanded(
@@ -670,34 +739,36 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                               Expanded(
                                 child: Text(
                                   sale.customerName ?? 'Guest',
-                                  style: const TextStyle(
-                                    fontSize: 16,
+                                  style: TextStyle(
+                                    fontSize: isSmallScreen ? 12 : 13,
                                     fontWeight: FontWeight.bold,
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isSmallScreen ? 4 : 6,
+                                  vertical: isSmallScreen ? 2 : 4,
                                 ),
                                 decoration: BoxDecoration(
                                   color: paymentMethodColor.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
                                       _getPaymentMethodIcon(sale.paymentMethod),
-                                      size: 12,
+                                      size: isSmallScreen ? 8 : 10,
                                       color: paymentMethodColor,
                                     ),
-                                    const SizedBox(width: 4),
+                                    const SizedBox(width: 2),
                                     Text(
                                       sale.paymentMethod,
                                       style: TextStyle(
-                                        fontSize: 10,
+                                        fontSize: isSmallScreen ? 7 : 8,
                                         color: paymentMethodColor,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -707,57 +778,44 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 4),
                           
                           // Date and time
                           Row(
                             children: [
                               Icon(
                                 Icons.access_time,
-                                size: 12,
+                                size: isSmallScreen ? 8 : 10,
                                 color: Colors.grey.shade500,
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: 2),
                               Text(
                                 DateFormat('MMM d, yyyy • h:mm a').format(sale.createdAt),
                                 style: TextStyle(
-                                  fontSize: 11,
+                                  fontSize: isSmallScreen ? 7 : 8,
                                   color: Colors.grey.shade600,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 4),
 
                           // Items count
                           Row(
                             children: [
                               Icon(
                                 Icons.shopping_bag,
-                                size: 12,
+                                size: isSmallScreen ? 8 : 10,
                                 color: Colors.grey.shade500,
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: 2),
                               Text(
                                 '${sale.items.length} items',
                                 style: TextStyle(
-                                  fontSize: 11,
+                                  fontSize: isSmallScreen ? 7 : 8,
                                   color: Colors.grey.shade600,
                                 ),
                               ),
-                              const SizedBox(width: 12),
-                              if (sale.items.isNotEmpty)
-                                Expanded(
-                                  child: Text(
-                                    sale.items.map((item) => '${item.quantity}x ${item.productName}').join(', '),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey.shade600,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
                             ],
                           ),
                         ],
@@ -765,7 +823,7 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                     ),
                   ],
                 ),
-                const Divider(height: 24),
+                Divider(height: isSmallScreen ? 12 : 16),
                 
                 // Financial summary
                 Row(
@@ -777,18 +835,20 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                           Text(
                             'Total',
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: isSmallScreen ? 8 : 9,
                               color: Colors.grey.shade600,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 1),
                           Text(
                             _formatCurrency(sale.total),
-                            style: const TextStyle(
-                              fontSize: 18,
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 12 : 13,
                               fontWeight: FontWeight.bold,
                               color: Colors.green,
                             ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ],
                       ),
@@ -800,18 +860,20 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                           Text(
                             'Profit',
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: isSmallScreen ? 8 : 9,
                               color: Colors.grey.shade600,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 1),
                           Text(
                             _formatCurrency(profit),
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: isSmallScreen ? 10 : 11,
                               fontWeight: FontWeight.bold,
                               color: profit >= 0 ? Colors.green.shade700 : Colors.red,
                             ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ],
                       ),
@@ -823,26 +885,26 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                           Text(
                             'Margin',
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: isSmallScreen ? 8 : 9,
                               color: Colors.grey.shade600,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 1),
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isSmallScreen ? 4 : 6,
+                              vertical: isSmallScreen ? 1 : 2,
                             ),
                             decoration: BoxDecoration(
                               color: profitPercentage >= 20
                                   ? Colors.green.withOpacity(0.1)
                                   : Colors.orange.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
                               '${profitPercentage.toStringAsFixed(1)}%',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: isSmallScreen ? 8 : 9,
                                 fontWeight: FontWeight.bold,
                                 color: profitPercentage >= 20
                                     ? Colors.green.shade700
@@ -864,6 +926,8 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
   }
 
   void _showFilterOptions() {
+    final isSmallScreen = MediaQuery.of(context).size.width < 360;
+    
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -871,7 +935,7 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
       ),
       builder: (context) {
         return Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -883,42 +947,62 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const SizedBox(height: 20),
-              const Text(
+              SizedBox(height: isSmallScreen ? 12 : 16),
+              Text(
                 'Filter Options',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: isSmallScreen ? 16 : 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 20),
-              // Add more filter options here (by payment method, min amount, etc.)
+              SizedBox(height: isSmallScreen ? 12 : 16),
               ListTile(
-                leading: Icon(Icons.payment, color: AppTheme.primaryColor),
-                title: const Text('Filter by Payment Method'),
-                trailing: const Icon(Icons.chevron_right),
+                leading: Icon(Icons.payment, color: AppTheme.primaryColor, size: isSmallScreen ? 18 : 20),
+                title: Text(
+                  'Filter by Payment Method',
+                  style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+                ),
+                trailing: Icon(Icons.chevron_right, size: isSmallScreen ? 18 : 20),
                 onTap: () {
                   Navigator.pop(context);
-                  _showPaymentMethodFilter();
+                  _showPaymentMethodFilter(isSmallScreen);
                 },
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 8 : 12,
+                  vertical: isSmallScreen ? 4 : 8,
+                ),
               ),
               ListTile(
-                leading: Icon(Icons.attach_money, color: AppTheme.successColor),
-                title: const Text('Filter by Amount'),
-                trailing: const Icon(Icons.chevron_right),
+                leading: Icon(Icons.attach_money, color: AppTheme.successColor, size: isSmallScreen ? 18 : 20),
+                title: Text(
+                  'Filter by Amount',
+                  style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+                ),
+                trailing: Icon(Icons.chevron_right, size: isSmallScreen ? 18 : 20),
                 onTap: () {
                   Navigator.pop(context);
                   // Implement amount filter
                 },
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 8 : 12,
+                  vertical: isSmallScreen ? 4 : 8,
+                ),
               ),
               ListTile(
-                leading: Icon(Icons.person, color: AppTheme.accentColor),
-                title: const Text('Filter by Customer'),
-                trailing: const Icon(Icons.chevron_right),
+                leading: Icon(Icons.person, color: AppTheme.accentColor, size: isSmallScreen ? 18 : 20),
+                title: Text(
+                  'Filter by Customer',
+                  style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+                ),
+                trailing: Icon(Icons.chevron_right, size: isSmallScreen ? 18 : 20),
                 onTap: () {
                   Navigator.pop(context);
                   // Implement customer filter
                 },
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 8 : 12,
+                  vertical: isSmallScreen ? 4 : 8,
+                ),
               ),
             ],
           ),
@@ -927,49 +1011,78 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
     );
   }
 
-  void _showPaymentMethodFilter() {
+  void _showPaymentMethodFilter(bool isSmallScreen) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Payment Method'),
+        title: Text(
+          'Payment Method',
+          style: TextStyle(fontSize: isSmallScreen ? 16 : 18),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: Icon(Icons.money, color: Colors.green),
-              title: const Text('Cash'),
+              leading: Icon(Icons.money, color: Colors.green, size: isSmallScreen ? 18 : 20),
+              title: Text(
+                'Cash',
+                style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 // Apply cash filter
               },
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: isSmallScreen ? 8 : 12,
+                vertical: isSmallScreen ? 4 : 8,
+              ),
             ),
             ListTile(
-              leading: Icon(Icons.credit_card, color: Colors.blue),
-              title: const Text('Card'),
+              leading: Icon(Icons.credit_card, color: Colors.blue, size: isSmallScreen ? 18 : 20),
+              title: Text(
+                'Card',
+                style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 // Apply card filter
               },
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: isSmallScreen ? 8 : 12,
+                vertical: isSmallScreen ? 4 : 8,
+              ),
             ),
             ListTile(
-              leading: Icon(Icons.swap_horiz, color: Colors.purple),
-              title: const Text('Transfer'),
+              leading: Icon(Icons.swap_horiz, color: Colors.purple, size: isSmallScreen ? 18 : 20),
+              title: Text(
+                'Transfer',
+                style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 // Apply transfer filter
               },
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: isSmallScreen ? 8 : 12,
+                vertical: isSmallScreen ? 4 : 8,
+              ),
             ),
           ],
+        ),
+        actionsPadding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+        buttonPadding: EdgeInsets.symmetric(
+          horizontal: isSmallScreen ? 8 : 12,
+          vertical: isSmallScreen ? 4 : 8,
         ),
       ),
     );
   }
 
-  void _showDetailedSummary() {
+  void _showDetailedSummary(bool isSmallScreen) {
     final totalSales = _sales.fold(0.0, (sum, sale) => sum + sale.total);
     final totalProfit = _sales.fold(0.0, (sum, sale) => sum + sale.profit);
     final avgSale = _sales.isEmpty ? 0.0 : (totalSales / _sales.length).toDouble();
-    // Group by payment method
+    
     Map<String, double> paymentMethodTotals = {};
     for (var sale in _sales) {
       paymentMethodTotals[sale.paymentMethod] = 
@@ -983,7 +1096,7 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -995,60 +1108,70 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 20),
-            const Text(
+            SizedBox(height: isSmallScreen ? 12 : 16),
+            Text(
               'Detailed Summary',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: isSmallScreen ? 16 : 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: isSmallScreen ? 12 : 16),
             
             // Stats
-            _buildSummaryDetailRow('Total Transactions', _sales.length.toString()),
-            _buildSummaryDetailRow('Total Sales', _formatCurrency(totalSales)),
-            _buildSummaryDetailRow('Total Profit', _formatCurrency(totalProfit)),
-            _buildSummaryDetailRow('Average Sale', _formatCurrency(avgSale)),
+            _buildSummaryDetailRow('Total Transactions', _sales.length.toString(), isSmallScreen),
+            _buildSummaryDetailRow('Total Sales', _formatCurrency(totalSales), isSmallScreen),
+            _buildSummaryDetailRow('Total Profit', _formatCurrency(totalProfit), isSmallScreen),
+            _buildSummaryDetailRow('Average Sale', _formatCurrency(avgSale), isSmallScreen),
             _buildSummaryDetailRow('Profit Margin', 
-                '${totalSales > 0 ? ((totalProfit / totalSales) * 100).toStringAsFixed(1) : '0'}%'),
+                '${totalSales > 0 ? ((totalProfit / totalSales) * 100).toStringAsFixed(1) : '0'}%', 
+                isSmallScreen),
             
-            const Divider(height: 32),
+            Divider(height: isSmallScreen ? 20 : 24),
             
             // Payment method breakdown
-            const Text(
+            Text(
               'Payment Methods',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: isSmallScreen ? 14 : 16,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: isSmallScreen ? 8 : 10),
             ...paymentMethodTotals.entries.map((entry) {
               final percentage = (entry.value / totalSales) * 100;
               return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: EdgeInsets.only(bottom: isSmallScreen ? 4 : 6),
                 child: Row(
                   children: [
                     Container(
-                      width: 8,
-                      height: 8,
+                      width: isSmallScreen ? 6 : 8,
+                      height: isSmallScreen ? 6 : 8,
                       decoration: BoxDecoration(
                         color: _getPaymentMethodColor(entry.key),
                         shape: BoxShape.circle,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Expanded(
-                      child: Text(entry.key),
+                      child: Text(
+                        entry.key,
+                        style: TextStyle(fontSize: isSmallScreen ? 11 : 12),
+                      ),
                     ),
                     Text(
                       _formatCurrency(entry.value),
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: isSmallScreen ? 11 : 12,
+                      ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isSmallScreen ? 4 : 6,
+                        vertical: isSmallScreen ? 1 : 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(4),
@@ -1056,7 +1179,7 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                       child: Text(
                         '${percentage.toStringAsFixed(1)}%',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: isSmallScreen ? 8 : 9,
                           color: Colors.grey.shade700,
                         ),
                       ),
@@ -1066,10 +1189,13 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
               );
             }).toList(),
             
-            const SizedBox(height: 20),
+            SizedBox(height: isSmallScreen ? 12 : 16),
             ElevatedButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
+              child: Text(
+                'Close',
+                style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+              ),
             ),
           ],
         ),
@@ -1077,9 +1203,9 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildSummaryDetailRow(String label, String value) {
+  Widget _buildSummaryDetailRow(String label, String value, bool isSmallScreen) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 2 : 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -1087,13 +1213,17 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
             label,
             style: TextStyle(
               color: Colors.grey.shade700,
+              fontSize: isSmallScreen ? 11 : 12,
             ),
           ),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.bold,
+              fontSize: isSmallScreen ? 11 : 12,
             ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
           ),
         ],
       ),
@@ -1126,7 +1256,7 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
     }
   }
 
-  Future<void> _showSaleDetails(Sale sale) async {
+  Future<void> _showSaleDetails(Sale sale, bool isSmallScreen) async {
     final fullSale = await _saleService.getSaleDetails(sale.id!);
     if (!mounted || fullSale == null) return;
 
@@ -1143,7 +1273,7 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
         expand: false,
         builder: (context, scrollController) {
           return Container(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -1161,34 +1291,41 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: isSmallScreen ? 12 : 16),
                 
                 // Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Invoice ${fullSale.invoiceNumber}',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Invoice ${fullSale.invoiceNumber}',
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 14 : 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          DateFormat('EEEE, MMMM d, yyyy').format(fullSale.createdAt),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
+                          const SizedBox(height: 2),
+                          Text(
+                            DateFormat('EEEE, MMMM d, yyyy').format(fullSale.createdAt),
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 9 : 10,
+                              color: Colors.grey.shade600,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isSmallScreen ? 6 : 8,
+                        vertical: isSmallScreen ? 4 : 6,
+                      ),
                       decoration: BoxDecoration(
                         color: _getPaymentMethodColor(fullSale.paymentMethod).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
@@ -1197,15 +1334,16 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                         children: [
                           Icon(
                             _getPaymentMethodIcon(fullSale.paymentMethod),
-                            size: 14,
+                            size: isSmallScreen ? 10 : 12,
                             color: _getPaymentMethodColor(fullSale.paymentMethod),
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 2),
                           Text(
                             fullSale.paymentMethod,
                             style: TextStyle(
                               color: _getPaymentMethodColor(fullSale.paymentMethod),
                               fontWeight: FontWeight.bold,
+                              fontSize: isSmallScreen ? 8 : 9,
                             ),
                           ),
                         ],
@@ -1215,18 +1353,18 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                 ),
                 
                 if (fullSale.customerName != null && fullSale.customerName!.isNotEmpty) ...[
-                  const SizedBox(height: 16),
+                  SizedBox(height: isSmallScreen ? 8 : 10),
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
                     decoration: BoxDecoration(
                       color: AppTheme.primaryColor.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: AppTheme.primaryColor.withOpacity(0.1)),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.person, color: AppTheme.primaryColor),
-                        const SizedBox(width: 8),
+                        Icon(Icons.person, color: AppTheme.primaryColor, size: isSmallScreen ? 16 : 18),
+                        const SizedBox(width: 6),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1234,16 +1372,18 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                               Text(
                                 'Customer',
                                 style: TextStyle(
-                                  fontSize: 11,
+                                  fontSize: isSmallScreen ? 9 : 10,
                                   color: Colors.grey.shade600,
                                 ),
                               ),
                               Text(
                                 fullSale.customerName!,
-                                style: const TextStyle(
-                                  fontSize: 16,
+                                style: TextStyle(
+                                  fontSize: isSmallScreen ? 12 : 13,
                                   fontWeight: FontWeight.bold,
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
@@ -1253,16 +1393,17 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                   ),
                 ],
                 
-                const Divider(height: 32),
+                Divider(height: isSmallScreen ? 20 : 24),
                 
                 // Items
                 Text(
                   'Items',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  style: TextStyle(
+                    fontSize: isSmallScreen ? 14 : 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: isSmallScreen ? 8 : 10),
                 
                 Expanded(
                   child: ListView.builder(
@@ -1271,20 +1412,20 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                     itemBuilder: (context, index) {
                       final item = fullSale.items[index];
                       return Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(12),
+                        margin: EdgeInsets.only(bottom: isSmallScreen ? 4 : 6),
+                        padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
                         decoration: BoxDecoration(
                           color: Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: Row(
                           children: [
                             Container(
-                              width: 40,
-                              height: 40,
+                              width: isSmallScreen ? 30 : 35,
+                              height: isSmallScreen ? 30 : 35,
                               decoration: BoxDecoration(
                                 color: AppTheme.primaryColor.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(6),
                               ),
                               child: Center(
                                 child: Text(
@@ -1292,25 +1433,29 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: AppTheme.primaryColor,
+                                    fontSize: isSmallScreen ? 9 : 10,
                                   ),
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 8),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     item.productName,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.w600,
+                                      fontSize: isSmallScreen ? 11 : 12,
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                   Text(
                                     '@ ${_formatCurrency(item.sellingPrice)} each',
                                     style: TextStyle(
-                                      fontSize: 11,
+                                      fontSize: isSmallScreen ? 8 : 9,
                                       color: Colors.grey.shade600,
                                     ),
                                   ),
@@ -1322,15 +1467,16 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                               children: [
                                 Text(
                                   _formatCurrency(item.subtotal),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontWeight: FontWeight.bold,
+                                    fontSize: isSmallScreen ? 10 : 11,
                                   ),
                                 ),
                                 if (item.discount > 0)
                                   Text(
                                     '-${_formatCurrency(item.discount)}',
                                     style: TextStyle(
-                                      fontSize: 11,
+                                      fontSize: isSmallScreen ? 7 : 8,
                                       color: Colors.red.shade400,
                                     ),
                                   ),
@@ -1343,22 +1489,22 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
                   ),
                 ),
                 
-                const Divider(),
+                Divider(height: isSmallScreen ? 12 : 16),
                 
                 // Totals
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 8 : 10),
                   child: Column(
                     children: [
-                      _buildTotalRow('Subtotal', fullSale.subtotal),
+                      _buildTotalRow('Subtotal', fullSale.subtotal, isSmallScreen),
                       if (fullSale.tax > 0)
-                        _buildTotalRow('Tax (15%)', fullSale.tax),
+                        _buildTotalRow('Tax (15%)', fullSale.tax, isSmallScreen),
                       if (fullSale.discount > 0)
-                        _buildTotalRow('Discount', -fullSale.discount, isNegative: true),
-                      const Divider(height: 16),
-                      _buildTotalRow('Total', fullSale.total, isBold: true),
-                      const SizedBox(height: 8),
-                      _buildTotalRow('Profit', fullSale.profit, 
+                        _buildTotalRow('Discount', -fullSale.discount, isSmallScreen, isNegative: true),
+                      Divider(height: isSmallScreen ? 10 : 12),
+                      _buildTotalRow('Total', fullSale.total, isSmallScreen, isBold: true),
+                      SizedBox(height: isSmallScreen ? 4 : 6),
+                      _buildTotalRow('Profit', fullSale.profit, isSmallScreen,
                           color: fullSale.profit >= 0 ? Colors.green : Colors.red),
                     ],
                   ),
@@ -1371,16 +1517,17 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildTotalRow(String label, double amount, {bool isBold = false, bool isNegative = false, Color? color}) {
+  Widget _buildTotalRow(String label, double amount, bool isSmallScreen,
+      {bool isBold = false, bool isNegative = false, Color? color}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 2 : 3),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
             style: TextStyle(
-              fontSize: isBold ? 16 : 14,
+              fontSize: isSmallScreen ? (isBold ? 12 : 10) : (isBold ? 14 : 12),
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
               color: Colors.grey.shade700,
             ),
@@ -1388,10 +1535,12 @@ class _SalesScreenState extends State<SalesScreen> with TickerProviderStateMixin
           Text(
             '${isNegative ? '-' : ''}${_formatCurrency(amount.abs())}',
             style: TextStyle(
-              fontSize: isBold ? 18 : 16,
+              fontSize: isSmallScreen ? (isBold ? 14 : 12) : (isBold ? 16 : 14),
               fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
               color: color ?? (isBold ? Colors.green.shade700 : Colors.black87),
             ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
           ),
         ],
       ),
