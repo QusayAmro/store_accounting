@@ -117,8 +117,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
-    final isSmallScreen = mediaQuery.size.width < 360;
-    final isMediumScreen = mediaQuery.size.width < 600;
+    final screenWidth = mediaQuery.size.width;
+    final isSmallScreen = screenWidth < 600; // Mobile
+    final isMediumScreen = screenWidth >= 600 && screenWidth < 900; // Tablet
+    final isLargeScreen = screenWidth >= 900; // Desktop/Windows
+    
     final padding = mediaQuery.padding;
 
     return Scaffold(
@@ -189,7 +192,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onRefresh: _loadDashboardData,
               child: SafeArea(
                 child: SingleChildScrollView(
-                  padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                  padding: EdgeInsets.all(isSmallScreen ? 12 : isLargeScreen ? 24 : 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -198,7 +201,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         'Welcome back, ${_currentUser?.fullName?.split(' ').first ?? 'Storekeeper'}!',
                         style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
-                          fontSize: isSmallScreen ? 18 : 22,
+                          fontSize: isSmallScreen ? 18 : isLargeScreen ? 26 : 22,
                         ),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
@@ -208,22 +211,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         'Here\'s what\'s happening in your store today',
                         style: TextStyle(
                           color: Colors.grey[600],
-                          fontSize: isSmallScreen ? 12 : 14,
+                          fontSize: isSmallScreen ? 12 : isLargeScreen ? 16 : 14,
                         ),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                       ),
                       const SizedBox(height: 16),
 
-                      // Stats Grid
+                      // Stats Grid - Responsive columns
                       GridView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: isSmallScreen ? 2 : 2,
-                          crossAxisSpacing: isSmallScreen ? 8 : 12,
-                          mainAxisSpacing: isSmallScreen ? 8 : 12,
-                          childAspectRatio: isSmallScreen ? 1.3 : 1.4,
+                          crossAxisCount: isLargeScreen ? 4 : (isMediumScreen ? 2 : 2),
+                          crossAxisSpacing: isLargeScreen ? 16 : (isSmallScreen ? 8 : 12),
+                          mainAxisSpacing: isLargeScreen ? 16 : (isSmallScreen ? 8 : 12),
+                          childAspectRatio: isLargeScreen ? 1.6 : (isSmallScreen ? 1.3 : 1.4),
                         ),
                         itemCount: 4,
                         itemBuilder: (context, index) {
@@ -236,6 +239,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 Colors.blue,
                                 () => Navigator.pushNamed(context, '/sales'),
                                 isSmallScreen,
+                                isLargeScreen,
                               );
                             case 1:
                               return _buildStatCard(
@@ -245,6 +249,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 Colors.orange,
                                 () => Navigator.pushNamed(context, '/products'),
                                 isSmallScreen,
+                                isLargeScreen,
                               );
                             case 2:
                               return _buildStatCard(
@@ -254,6 +259,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 Colors.green,
                                 () => Navigator.pushNamed(context, '/products'),
                                 isSmallScreen,
+                                isLargeScreen,
                               );
                             case 3:
                               return _buildStatCard(
@@ -263,66 +269,124 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 Colors.purple,
                                 () => Navigator.pushNamed(context, '/reports'),
                                 isSmallScreen,
+                                isLargeScreen,
                               );
                             default:
                               return const SizedBox.shrink();
                           }
                         },
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 24),
 
                       // Quick Actions
                       Text(
                         'Quick Actions',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
-                          fontSize: isSmallScreen ? 16 : 20,
+                          fontSize: isSmallScreen ? 16 : isLargeScreen ? 22 : 18,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
                       
-                      // Quick Actions Grid
-                      GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: 2,
-                        crossAxisSpacing: isSmallScreen ? 8 : 12,
-                        mainAxisSpacing: isSmallScreen ? 8 : 12,
-                        childAspectRatio: isSmallScreen ? 1.2 : 1.3,
-                        children: [
-                          _buildActionButton(
-                            'New Sale',
-                            Icons.shopping_cart,
-                            Colors.green,
-                            () => Navigator.pushNamed(context, '/create-sale'),
-                            isSmallScreen,
+                      // Quick Actions Grid - Responsive layout
+                      if (isLargeScreen)
+                        // Horizontal list for large screens
+                        SizedBox(
+                          height: 120,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: 4,
+                            itemBuilder: (context, index) {
+                              final actions = [
+                                {
+                                  'title': 'New Sale',
+                                  'icon': Icons.shopping_cart,
+                                  'color': Colors.green,
+                                  'route': '/create-sale',
+                                },
+                                {
+                                  'title': 'Add Product',
+                                  'icon': Icons.add_box,
+                                  'color': Colors.blue,
+                                  'route': '/add-product',
+                                },
+                                {
+                                  'title': 'Products',
+                                  'icon': Icons.inventory,
+                                  'color': Colors.orange,
+                                  'route': '/products',
+                                },
+                                {
+                                  'title': 'Reports',
+                                  'icon': Icons.bar_chart,
+                                  'color': Colors.purple,
+                                  'route': '/reports',
+                                },
+                              ];
+                              
+                              final action = actions[index];
+                              return Container(
+                                width: 180,
+                                margin: const EdgeInsets.only(right: 12),
+                                child: _buildActionButton(
+                                  action['title'] as String,
+                                  action['icon'] as IconData,
+                                  action['color'] as Color,
+                                  () => Navigator.pushNamed(context, action['route'] as String),
+                                  false,
+                                  true,
+                                ),
+                              );
+                            },
                           ),
-                          _buildActionButton(
-                            'Add Product',
-                            Icons.add_box,
-                            Colors.blue,
-                            () => Navigator.pushNamed(context, '/add-product'),
-                            isSmallScreen,
-                          ),
-                          _buildActionButton(
-                            'Products',
-                            Icons.inventory,
-                            Colors.orange,
-                            () => Navigator.pushNamed(context, '/products'),
-                            isSmallScreen,
-                          ),
-                          _buildActionButton(
-                            'Reports',
-                            Icons.bar_chart,
-                            Colors.purple,
-                            () => Navigator.pushNamed(context, '/reports'),
-                            isSmallScreen,
-                          ),
-                        ],
-                      ),
+                        )
+                      else
+                        // Grid for small/medium screens
+                        GridView.count(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisCount: 2,
+                          crossAxisSpacing: isSmallScreen ? 8 : 12,
+                          mainAxisSpacing: isSmallScreen ? 8 : 12,
+                          childAspectRatio: isSmallScreen ? 1.2 : 1.3,
+                          children: [
+                            _buildActionButton(
+                              'New Sale',
+                              Icons.shopping_cart,
+                              Colors.green,
+                              () => Navigator.pushNamed(context, '/create-sale'),
+                              isSmallScreen,
+                              false,
+                            ),
+                            _buildActionButton(
+                              'Add Product',
+                              Icons.add_box,
+                              Colors.blue,
+                              () => Navigator.pushNamed(context, '/add-product'),
+                              isSmallScreen,
+                              false,
+                            ),
+                            _buildActionButton(
+                              'Products',
+                              Icons.inventory,
+                              Colors.orange,
+                              () => Navigator.pushNamed(context, '/products'),
+                              isSmallScreen,
+                              false,
+                            ),
+                            _buildActionButton(
+                              'Reports',
+                              Icons.bar_chart,
+                              Colors.purple,
+                              () => Navigator.pushNamed(context, '/reports'),
+                              isSmallScreen,
+                              false,
+                            ),
+                          ],
+                        ),
                       
                       // Add bottom padding for scrolling
-                      SizedBox(height: padding.bottom + 10),
+                      SizedBox(height: padding.bottom + 20),
                     ],
                   ),
                 ),
@@ -338,16 +402,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Color color,
     VoidCallback onTap,
     bool isSmallScreen,
+    bool isLargeScreen,
   ) {
     return GestureDetector(
       onTap: onTap,
       child: Card(
-        elevation: 2,
+        elevation: isLargeScreen ? 3 : 2,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 12),
+          borderRadius: BorderRadius.circular(isLargeScreen ? 16 : (isSmallScreen ? 8 : 12)),
         ),
         child: Padding(
-          padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
+          padding: EdgeInsets.all(
+            isLargeScreen ? 20 : (isSmallScreen ? 8 : 10),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -357,21 +424,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
-                    padding: EdgeInsets.all(isSmallScreen ? 4 : 6),
+                    padding: EdgeInsets.all(
+                      isLargeScreen ? 12 : (isSmallScreen ? 4 : 6),
+                    ),
                     decoration: BoxDecoration(
                       color: color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(isSmallScreen ? 4 : 6),
+                      borderRadius: BorderRadius.circular(isLargeScreen ? 12 : (isSmallScreen ? 4 : 6)),
                     ),
                     child: Icon(
                       icon,
                       color: color,
-                      size: isSmallScreen ? 14 : 16,
+                      size: isLargeScreen ? 28 : (isSmallScreen ? 14 : 16),
                     ),
                   ),
                   // Optional small indicator
                   Container(
-                    width: isSmallScreen ? 6 : 8,
-                    height: isSmallScreen ? 6 : 8,
+                    width: isLargeScreen ? 10 : (isSmallScreen ? 6 : 8),
+                    height: isLargeScreen ? 10 : (isSmallScreen ? 6 : 8),
                     decoration: BoxDecoration(
                       color: color.withOpacity(0.5),
                       shape: BoxShape.circle,
@@ -379,25 +448,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               // Value
               Flexible(
                 child: Text(
                   value,
                   style: TextStyle(
-                    fontSize: isSmallScreen ? 14 : 16,
+                    fontSize: isLargeScreen ? 28 : (isSmallScreen ? 14 : 16),
                     fontWeight: FontWeight.bold,
                   ),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 4),
               // Title
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: isSmallScreen ? 9 : 10,
+                  fontSize: isLargeScreen ? 16 : (isSmallScreen ? 9 : 10),
                   color: Colors.grey[600],
                 ),
                 maxLines: 1,
@@ -416,15 +485,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Color color,
     VoidCallback onTap,
     bool isSmallScreen,
+    bool isLargeScreen,
   ) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 10),
+      borderRadius: BorderRadius.circular(isLargeScreen ? 16 : (isSmallScreen ? 8 : 10)),
       child: Container(
-        padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
+        padding: EdgeInsets.all(
+          isLargeScreen ? 20 : (isSmallScreen ? 10 : 12),
+        ),
         decoration: BoxDecoration(
           color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 10),
+          borderRadius: BorderRadius.circular(isLargeScreen ? 16 : (isSmallScreen ? 8 : 10)),
           border: Border.all(color: color.withOpacity(0.3)),
         ),
         child: Column(
@@ -433,15 +505,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Icon(
               icon,
               color: color,
-              size: isSmallScreen ? 22 : 24,
+              size: isLargeScreen ? 36 : (isSmallScreen ? 22 : 24),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             Text(
               title,
               style: TextStyle(
                 color: color,
                 fontWeight: FontWeight.w600,
-                fontSize: isSmallScreen ? 11 : 12,
+                fontSize: isLargeScreen ? 16 : (isSmallScreen ? 11 : 12),
               ),
               textAlign: TextAlign.center,
               maxLines: 1,
